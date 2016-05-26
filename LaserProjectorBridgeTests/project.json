@@ -1,9 +1,11 @@
 {
   "version": "1.0.0-*",
-  "description": "LaserProjectorBridgeTests Console Application",
-  "authors": [ "Carlos Costa" ],
+  "title": "LaserProjectorBridgeTests",
+  "summary": "LaserProjectorBridgeTests Console Application",
+  "authors": [ "Carlos Miguel Correira da Costa" ],
+  "language": "English",
   "tags": [ "" ],
-  "projectUrl": "",
+  "projectUrl": "https://github.com/carlosmccosta/laser_projector_bridge_csharp",
   "licenseUrl": "",
 
   "compilationOptions": {
@@ -23,10 +25,7 @@
     "dnxcore50": {
       "dependencies": {
         "Microsoft.CSharp": "4.0.1-beta-23516",
-        "System.Collections": "4.0.11-beta-23516",
-        "System.Console": "4.0.0-beta-23516",
-        "System.Linq": "4.0.1-beta-23516",
-        "System.Threading": "4.0.11-beta-23516"
+        "System.Console": "4.0.0-beta-23516"
       }
     }
   }

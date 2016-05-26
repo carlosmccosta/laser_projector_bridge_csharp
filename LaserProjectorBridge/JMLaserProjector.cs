@@ -6,70 +6,75 @@ namespace LaserProjectorBridge
     public class JMLaserProjector
     {
         // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   <fields>   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        static int s_number_of_projectors_ = NativeMethods.JMLaser.JMLASER_ERROR_NOT_ENUMERATED;
-        uint projector_list_entry_index_;
-        int projector_handle_;
-        int projector_maximum_number_of_vectors_per_frame_;
-        int projector_minimum_speed_;
-        int projector_maximum_speed_;
-        int projector_speed_step_;
-        string projector_network_address_;
-        string projector_name_;
-        string projector_name_from_handle_;
-        string projector_friendly_name_;
-        string projector_family_name_;
-        bool projector_output_started_;
+        #region fields
+        public static int NumberOfProjectors { get; set; } = NativeMethods.JMLaser.JMLASER_ERROR_NOT_ENUMERATED;
+        public uint ProjectorListEntryIndex { get; set; }
+        public int ProjectorHandle { get; set; }
+        public int ProjectorMaximumNumberOfVectorsPerFrame { get; set; }
+        public int ProjectorMinimumSpeed { get; set; }
+        public int ProjectorMaximumSpeed { get; set; }
+        public int ProjectorSpeedStep { get; set; }
+        public string ProjectorNetworkAddress { get; set; }
+        public string ProjectorName { get; set; }
+        public string ProjectorNameFromHandle { get; set; }
+        public string ProjectorFriendlyName { get; set; }
+        public string ProjectorFamilyName { get; set; }
+        public bool ProjectorOutputStarted { get; set; }
+        #endregion
         // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   </fields>   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
         // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   <constructors-destructor>   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        #region constructors-destructor
         public JMLaserProjector()
         {
-            projector_list_entry_index_ = 0;
-            projector_handle_ = -1;
-            projector_maximum_number_of_vectors_per_frame_ = -1;
-            projector_minimum_speed_ = -1;
-            projector_maximum_speed_ = -1;
-            projector_speed_step_ = -1;
-            projector_output_started_ = false;
+            ProjectorListEntryIndex = 0;
+            ProjectorHandle = -1;
+            ProjectorMaximumNumberOfVectorsPerFrame = -1;
+            ProjectorMinimumSpeed = -1;
+            ProjectorMaximumSpeed = -1;
+            ProjectorSpeedStep = -1;
+            ProjectorOutputStarted = false;
             jmLaserBridgeEnumerateDevices();
         }
 
         ~JMLaserProjector()
         {
-            resetProjector();
+            ResetProjector();
         }
 
 
-        public void resetProjector()
+        public void ResetProjector()
         {
-            if (projector_output_started_)
+            if (ProjectorOutputStarted)
             {
-                stopOutput();
-                projector_output_started_ = false;
+                StopOutput();
+                ProjectorOutputStarted = false;
             }
 
-            if (projector_handle_ >= 0)
+            if (ProjectorHandle >= 0)
             {
-                closeProjector();
-                projector_handle_ = -1;
+                CloseProjector();
+                ProjectorHandle = -1;
             }
 
-            projector_list_entry_index_ = 0;
-            projector_maximum_number_of_vectors_per_frame_ = -1;
-            projector_minimum_speed_ = -1;
-            projector_maximum_speed_ = -1;
-            projector_speed_step_ = -1;
-            projector_network_address_ = "";
-            projector_name_ = "";
-            projector_name_from_handle_ = "";
-            projector_friendly_name_ = "";
-            projector_family_name_ = "";
+            ProjectorListEntryIndex = 0;
+            ProjectorMaximumNumberOfVectorsPerFrame = -1;
+            ProjectorMinimumSpeed = -1;
+            ProjectorMaximumSpeed = -1;
+            ProjectorSpeedStep = -1;
+            ProjectorNetworkAddress = "";
+            ProjectorName = "";
+            ProjectorNameFromHandle = "";
+            ProjectorFriendlyName = "";
+            ProjectorFamilyName = "";
         }
+        #endregion
         // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   </constructors-destructor>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
         // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   <static functions>   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        #region static functions
         public static int jmLaserBridgeOpenDll()
         {
             return NativeMethods.JMLaser.jmLaserOpenDll();
@@ -83,305 +88,291 @@ namespace LaserProjectorBridge
 
         public static int jmLaserBridgeEnumerateDevices()
         {
-            if (s_number_of_projectors_ <= 0)
-            {
-                s_number_of_projectors_ = NativeMethods.JMLaser.jmLaserEnumerateDevices();
-            }
-            else {
-                s_number_of_projectors_ = jmLaserBridgeGetDeviceListLength();
-            }
-            return s_number_of_projectors_;
+            NumberOfProjectors = NumberOfProjectors <= 0 ? NativeMethods.JMLaser.jmLaserEnumerateDevices() : jmLaserBridgeGetDeviceListLength();
+            return NumberOfProjectors;
         }
 
         public static string jmLaserBridgeGetDeviceListEntry(uint list_index)
         {
             if (jmLaserBridgeEnumerateDevices() <= 0) { return ""; }
-            int device_name_length = NativeMethods.JMLaser.jmLaserGetDeviceListEntryLength(list_index);
-            if (device_name_length == NativeMethods.JMLaser.JMLASER_ERROR_NOT_ENUMERATED)
+            int deviceNameLength = NativeMethods.JMLaser.jmLaserGetDeviceListEntryLength(list_index);
+            if (deviceNameLength == NativeMethods.JMLaser.JMLASER_ERROR_NOT_ENUMERATED)
             {
                 if (jmLaserBridgeEnumerateDevices() <= 0) { return ""; }
-                device_name_length = NativeMethods.JMLaser.jmLaserGetDeviceListEntryLength(list_index);
+                deviceNameLength = NativeMethods.JMLaser.jmLaserGetDeviceListEntryLength(list_index);
             }
-            if (device_name_length > 0)
+            if (deviceNameLength > 0)
             {
-                StringBuilder device_name = new StringBuilder(device_name_length);
-                if (NativeMethods.JMLaser.jmLaserGetDeviceListEntry(list_index, device_name, (uint) device_name_length) == 0) {
-                    return device_name.ToString();
+                StringBuilder deviceName = new StringBuilder(deviceNameLength);
+                if (NativeMethods.JMLaser.jmLaserGetDeviceListEntry(list_index, deviceName, (uint) deviceNameLength) == 0) {
+                    return deviceName.ToString();
                 }
             }
             return "";
         }
 
-        public static string jmLaserBridgeGetDeviceName(int projector_handle)
+        public static string jmLaserBridgeGetDeviceName(int projectorHandle)
         {
-            if (projector_handle < 0) { return ""; }
-            int device_name_from_handle_length = NativeMethods.JMLaser.jmLaserGetDeviceNameLength(projector_handle);
-            if (device_name_from_handle_length > 0)
+            if (projectorHandle < 0) { return ""; }
+            int deviceNameFromHandleLength = NativeMethods.JMLaser.jmLaserGetDeviceNameLength(projectorHandle);
+            if (deviceNameFromHandleLength > 0)
             {
-                StringBuilder device_name_from_handle = new StringBuilder(device_name_from_handle_length);
-                if (NativeMethods.JMLaser.jmLaserGetDeviceName(projector_handle, device_name_from_handle, (uint) device_name_from_handle_length) == 0) {
-                    return device_name_from_handle.ToString();
+                StringBuilder deviceNameFromHandle = new StringBuilder(deviceNameFromHandleLength);
+                if (NativeMethods.JMLaser.jmLaserGetDeviceName(projectorHandle, deviceNameFromHandle, (uint) deviceNameFromHandleLength) == 0) {
+                    return deviceNameFromHandle.ToString();
                 }
             }
             return "";
         }
 
-        public static string jmLaserBridgeGetDeviceFamilyName(string projector_name)
+        public static string jmLaserBridgeGetDeviceFamilyName(string projectorName)
         {
-            if (projector_name.Length == 0) { return ""; }
+            if (projectorName.Length == 0) { return ""; }
             if (jmLaserBridgeEnumerateDevices() <= 0) { return ""; }
-            int device_family_name_length = NativeMethods.JMLaser.jmLaserGetDeviceFamilyNameLength(projector_name);
-            if (device_family_name_length > 0)
+            int deviceFamilyNameLength = NativeMethods.JMLaser.jmLaserGetDeviceFamilyNameLength(projectorName);
+            if (deviceFamilyNameLength > 0)
             {
-                StringBuilder device_family_name = new StringBuilder(device_family_name_length);
-                if (NativeMethods.JMLaser.jmLaserGetDeviceFamilyName(projector_name, device_family_name, (uint) device_family_name_length) == 0) {
-                    return device_family_name.ToString();
+                StringBuilder deviceFamilyName = new StringBuilder(deviceFamilyNameLength);
+                if (NativeMethods.JMLaser.jmLaserGetDeviceFamilyName(projectorName, deviceFamilyName, (uint) deviceFamilyNameLength) == 0) {
+                    return deviceFamilyName.ToString();
                 }
             }
             return "";
         }
 
-        public static string jmLaserBridgeGetFriendlyName(string projector_name)
+        public static string jmLaserBridgeGetFriendlyName(string projectorName)
         {
-            if (projector_name.Length == 0) { return ""; }
+            if (projectorName.Length == 0) { return ""; }
             if (jmLaserBridgeEnumerateDevices() <= 0) { return ""; }
-            int device_friendly_name_length = NativeMethods.JMLaser.jmLaserGetFriendlyNameLength(projector_name);
-            if (device_friendly_name_length > 0)
+            int deviceFriendlyNameLength = NativeMethods.JMLaser.jmLaserGetFriendlyNameLength(projectorName);
+            if (deviceFriendlyNameLength > 0)
             {
-                StringBuilder device_friendly_name = new StringBuilder(device_friendly_name_length);
-                if (NativeMethods.JMLaser.jmLaserGetFriendlyName(projector_name, device_friendly_name, (uint) device_friendly_name_length) == 0) {
-                    return device_friendly_name.ToString();
+                StringBuilder deviceFriendlyName = new StringBuilder(deviceFriendlyNameLength);
+                if (NativeMethods.JMLaser.jmLaserGetFriendlyName(projectorName, deviceFriendlyName, (uint) deviceFriendlyNameLength) == 0) {
+                    return deviceFriendlyName.ToString();
                 }
             }
             return "";
         }
 
-        public static bool jmLaserBridgeSetFriendlyName(int projector_handle, string projector_friendly_name)
+        public static bool jmLaserBridgeSetFriendlyName(int projectorHandle, string projectorFriendlyName)
         {
-            if (projector_handle < 0 || projector_friendly_name.Length == 0) { return false; }
+            if (projectorHandle < 0 || projectorFriendlyName.Length == 0) { return false; }
             if (jmLaserBridgeEnumerateDevices() <= 0) { return false; }
-            return (NativeMethods.JMLaser.jmLaserSetFriendlyName(projector_handle, projector_friendly_name) == 0);
+            return (NativeMethods.JMLaser.jmLaserSetFriendlyName(projectorHandle, projectorFriendlyName) == 0);
         }
 
-        public static int jmLaserBridgeOpenDevice(string projector_name)
+        public static int jmLaserBridgeOpenDevice(string projectorName)
         {
-            if (projector_name.Length == 0) { return 0; }
+            if (projectorName.Length == 0) { return 0; }
             if (jmLaserBridgeEnumerateDevices() <= 0) { return 0; }
-            return NativeMethods.JMLaser.jmLaserOpenDevice(projector_name);
+            return NativeMethods.JMLaser.jmLaserOpenDevice(projectorName);
         }
 
-        public static int jmLaserBridgeGetMaxFrameSize(int projector_handle)
+        public static int jmLaserBridgeGetMaxFrameSize(int projectorHandle)
         {
-            return NativeMethods.JMLaser.jmLaserGetMaxFrameSize(projector_handle);
+            return NativeMethods.JMLaser.jmLaserGetMaxFrameSize(projectorHandle);
         }
 
         public static int jmLaserBridgeGetDeviceListLength()
         {
-            if (s_number_of_projectors_ <= 0)
+            if (NumberOfProjectors <= 0)
             {
-                s_number_of_projectors_ = NativeMethods.JMLaser.jmLaserEnumerateDevices();
+                NumberOfProjectors = NativeMethods.JMLaser.jmLaserEnumerateDevices();
             }
             return NativeMethods.JMLaser.jmLaserGetDeviceListLength();
         }
 
-        public static bool jmLaserBridgeGetIsNetworkDevice(string projector_name)
+        public static bool jmLaserBridgeGetIsNetworkDevice(string projectorName)
         {
-            if (projector_name.Length == 0) { return false; }
+            if (projectorName.Length == 0) { return false; }
             if (jmLaserBridgeEnumerateDevices() <= 0) { return false; }
 
-            return (NativeMethods.JMLaser.jmLaserGetIsNetworkDevice(projector_name) == 1);
+            return (NativeMethods.JMLaser.jmLaserGetIsNetworkDevice(projectorName) == 1);
         }
 
-        public static string jmLaserBridgeGetNetworkAddress(string projector_name)
+        public static string jmLaserBridgeGetNetworkAddress(string projectorName)
         {
-            if (projector_name.Length == 0) { return ""; }
+            if (projectorName.Length == 0) { return ""; }
             if (jmLaserBridgeEnumerateDevices() <= 0) { return ""; }
-            int network_address_length = NativeMethods.JMLaser.jmLaserGetNetworkAddressLength(projector_name);
-            if (network_address_length > 0)
+            int networkAddressLength = NativeMethods.JMLaser.jmLaserGetNetworkAddressLength(projectorName);
+            if (networkAddressLength > 0)
             {
-                StringBuilder network_address = new StringBuilder(network_address_length);
-                if (NativeMethods.JMLaser.jmLaserGetNetworkAddress(projector_name, network_address, (uint) network_address_length) == 0) {
-                    return network_address.ToString();
+                StringBuilder networkAddress = new StringBuilder(networkAddressLength);
+                if (NativeMethods.JMLaser.jmLaserGetNetworkAddress(projectorName, networkAddress, (uint) networkAddressLength) == 0) {
+                    return networkAddress.ToString();
                 }
             }
             return "";
         }
 
-        public static int jmLaserBridgeGetMinSpeed(int projector_handle)
+        public static int jmLaserBridgeGetMinSpeed(int projectorHandle)
         {
-            return NativeMethods.JMLaser.jmLaserGetMinSpeed(projector_handle);
+            return NativeMethods.JMLaser.jmLaserGetMinSpeed(projectorHandle);
         }
 
-        public static int jmLaserBridgeGetMaxSpeed(int projector_handle)
+        public static int jmLaserBridgeGetMaxSpeed(int projectorHandle)
         {
-            return NativeMethods.JMLaser.jmLaserGetMaxSpeed(projector_handle);
+            return NativeMethods.JMLaser.jmLaserGetMaxSpeed(projectorHandle);
         }
 
-        public static int jmLaserBridgeGetSpeedStep(int projector_handle)
+        public static int jmLaserBridgeGetSpeedStep(int projectorHandle)
         {
-            return NativeMethods.JMLaser.jmLaserGetSpeedStep(projector_handle);
+            return NativeMethods.JMLaser.jmLaserGetSpeedStep(projectorHandle);
         }
 
-        public static NativeMethods.JMLaser.JMVectorStruct createSingleColorLaserPoint(int x_val, int y_val, ushort intensity_val)
+        public static NativeMethods.JMLaser.JMVectorStruct CreateSingleColorLaserPoint(int xVal, int yVal, ushort intensityVal)
         {
-            return new NativeMethods.JMLaser.JMVectorStruct() { x=x_val, y=y_val, r=0, g=0, b=0, i=intensity_val, deepblue=0, yellow=0, cyan=0, user4=0};
+            return new NativeMethods.JMLaser.JMVectorStruct() { x=xVal, y=yVal, r=0, g=0, b=0, i=intensityVal, deepblue=0, yellow=0, cyan=0, user4=0};
         }
+        #endregion
         // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   <static functions/>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
         // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   <methods>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        public bool setupProjector()
+        #region methods
+        public bool SetupProjector()
         {
-            s_number_of_projectors_ = jmLaserBridgeGetDeviceListLength();
-            if (s_number_of_projectors_ > 0)
+            NumberOfProjectors = jmLaserBridgeGetDeviceListLength();
+            if (NumberOfProjectors > 0)
             {
-                return setupProjectorUsingIndex(0);
+                return SetupProjectorUsingIndex(0);
             }
             return false;
         }
 
-        public bool setupProjectorUsingName(string projector_name)
+        public bool SetupProjectorUsingName(string projectorName)
         {
-            if (projector_name.Length == 0) { return false; }
-            s_number_of_projectors_ = jmLaserBridgeGetDeviceListLength();
-            if (s_number_of_projectors_ > 0)
+            if (projectorName.Length == 0) { return false; }
+            NumberOfProjectors = jmLaserBridgeGetDeviceListLength();
+            if (NumberOfProjectors > 0)
             {
-                for (int i = 0; i < s_number_of_projectors_; ++i)
+                for (int i = 0; i < NumberOfProjectors; ++i)
                 {
-                    if (jmLaserBridgeGetDeviceListEntry((uint)i) == projector_name)
+                    if (jmLaserBridgeGetDeviceListEntry((uint)i) == projectorName)
                     {
-                        return setupProjectorUsingIndex((uint)i);
+                        return SetupProjectorUsingIndex((uint)i);
                     }
                 }
             }
             return false;
         }
 
-        public bool setupProjectorUsingFriendlyName(string projector_friendly_name)
+        public bool SetupProjectorUsingFriendlyName(string projectorFriendlyName)
         {
-            if (projector_friendly_name.Length == 0) { return false; }
-            s_number_of_projectors_ = jmLaserBridgeGetDeviceListLength();
-            if (s_number_of_projectors_ > 0)
+            if (projectorFriendlyName.Length == 0) { return false; }
+            NumberOfProjectors = jmLaserBridgeGetDeviceListLength();
+            if (NumberOfProjectors > 0)
             {
-                for (int i = 0; i < s_number_of_projectors_; ++i)
+                for (int i = 0; i < NumberOfProjectors; ++i)
                 {
-                    string projector_name = jmLaserBridgeGetDeviceListEntry((uint)i);
-                    if (jmLaserBridgeGetFriendlyName(projector_name) == projector_friendly_name)
+                    string projectorName = jmLaserBridgeGetDeviceListEntry((uint)i);
+                    if (jmLaserBridgeGetFriendlyName(projectorName) == projectorFriendlyName)
                     {
-                        return setupProjectorUsingIndex((uint)i);
+                        return SetupProjectorUsingIndex((uint)i);
                     }
                 }
             }
             return false;
         }
 
-        public bool setupProjectorUsingIndex(uint projector_index)
+        public bool SetupProjectorUsingIndex(uint projectorIndex)
         {
-            if (projector_index < 0) { return false; }
-            resetProjector();
-            projector_list_entry_index_ = projector_index;
-            projector_name_ = jmLaserBridgeGetDeviceListEntry(projector_index);
-            if (projector_name_.Length > 0)
+            ResetProjector();
+            ProjectorListEntryIndex = projectorIndex;
+            ProjectorName = jmLaserBridgeGetDeviceListEntry(projectorIndex);
+            if (ProjectorName.Length > 0)
             {
-                projector_friendly_name_ = jmLaserBridgeGetFriendlyName(projector_name_);
-                projector_family_name_ = jmLaserBridgeGetDeviceFamilyName(projector_name_);
-                projector_handle_ = jmLaserBridgeOpenDevice(projector_name_);
+                ProjectorFriendlyName = jmLaserBridgeGetFriendlyName(ProjectorName);
+                ProjectorFamilyName = jmLaserBridgeGetDeviceFamilyName(ProjectorName);
+                ProjectorHandle = jmLaserBridgeOpenDevice(ProjectorName);
 
-                if (projector_handle_ >= 0)
+                if (ProjectorHandle >= 0)
                 {
-                    projector_name_from_handle_ = jmLaserBridgeGetDeviceName(projector_handle_);
-                    projector_maximum_number_of_vectors_per_frame_ = jmLaserBridgeGetMaxFrameSize(projector_handle_);
-                    if (jmLaserBridgeGetIsNetworkDevice(projector_name_))
+                    ProjectorNameFromHandle = jmLaserBridgeGetDeviceName(ProjectorHandle);
+                    ProjectorMaximumNumberOfVectorsPerFrame = jmLaserBridgeGetMaxFrameSize(ProjectorHandle);
+                    if (jmLaserBridgeGetIsNetworkDevice(ProjectorName))
                     {
-                        projector_network_address_ = jmLaserBridgeGetNetworkAddress(projector_name_);
+                        ProjectorNetworkAddress = jmLaserBridgeGetNetworkAddress(ProjectorName);
                     }
-                    projector_minimum_speed_ = jmLaserBridgeGetMinSpeed(projector_handle_);
-                    projector_maximum_speed_ = jmLaserBridgeGetMaxSpeed(projector_handle_);
-                    projector_speed_step_ = jmLaserBridgeGetSpeedStep(projector_handle_);
-                    if (projector_maximum_number_of_vectors_per_frame_ > 0 && projector_minimum_speed_ >= 0 && projector_maximum_speed_ > 0 && projector_speed_step_ > 0) { return true; }
+                    ProjectorMinimumSpeed = jmLaserBridgeGetMinSpeed(ProjectorHandle);
+                    ProjectorMaximumSpeed = jmLaserBridgeGetMaxSpeed(ProjectorHandle);
+                    ProjectorSpeedStep = jmLaserBridgeGetSpeedStep(ProjectorHandle);
+                    if (ProjectorMaximumNumberOfVectorsPerFrame > 0 && ProjectorMinimumSpeed >= 0 && ProjectorMaximumSpeed > 0 && ProjectorSpeedStep > 0) { return true; }
                 }
             }
-            resetProjector();
+            ResetProjector();
             return false;
         }
 
-        public bool closeProjector()
+        public bool CloseProjector()
         {
-            if (projector_handle_ >= 0)
+            if (ProjectorHandle >= 0 && NativeMethods.JMLaser.jmLaserCloseDevice(ProjectorHandle) == 0)
             {
-                if (NativeMethods.JMLaser.jmLaserCloseDevice(projector_handle_) == 0)
-                {
-                    projector_handle_ = -1;
-                    return true;
-                }
+                ProjectorHandle = -1;
+                return true;
             }
             return false;
         }
 
 
-        public bool setProjectorFriendlyName(string projector_friendly_name)
+        public bool SetProjectorFriendlyName(string projectorFriendlyName)
         {
-            if (projector_friendly_name.Length > 0 && projector_handle_ >= 0)
+            if (projectorFriendlyName.Length > 0 && ProjectorHandle >= 0 && jmLaserBridgeSetFriendlyName(ProjectorHandle, projectorFriendlyName))
             {
-                if (jmLaserBridgeSetFriendlyName(projector_handle_, projector_friendly_name))
-                {
-                    projector_friendly_name_ = jmLaserBridgeGetFriendlyName(projector_name_);
-                    return projector_friendly_name_.Length > 0;
-                }
+                ProjectorFriendlyName = jmLaserBridgeGetFriendlyName(ProjectorName);
+                return ProjectorFriendlyName.Length > 0;
             }
             return false;
         }
 
 
-        public bool startOutput()
+        public bool StartOutput()
         {
-            if (projector_handle_ >= 0)
+            if (ProjectorHandle >= 0 && NativeMethods.JMLaser.jmLaserStartOutput(ProjectorHandle) == 0)
             {
-                if (NativeMethods.JMLaser.jmLaserStartOutput(projector_handle_) == 0)
-                {
-                    projector_output_started_ = true;
-                    return true;
-                }
+                ProjectorOutputStarted = true;
+                return true;
             }
             return false;
         }
 
-        public bool sendVectorImageToProjector(ref List<NativeMethods.JMLaser.JMVectorStruct> points, uint speed, uint repetitions)
+        public bool SendVectorImageToProjector(ref List<NativeMethods.JMLaser.JMVectorStruct> points, uint speed, uint repetitions)
         {
-            if (projector_handle_ >= 0 && points.Count > 0 /*&& speed >= projector_minimum_speed_*/ && speed <= projector_maximum_speed_ && repetitions >= 0 && projector_maximum_number_of_vectors_per_frame_ > 0)
+            if (ProjectorHandle >= 0 && points.Count > 0 && speed >= ProjectorMinimumSpeed && speed <= ProjectorMaximumSpeed && ProjectorMaximumNumberOfVectorsPerFrame > 0)
             {
-                if (points.Count > projector_maximum_number_of_vectors_per_frame_)
+                if (points.Count > ProjectorMaximumNumberOfVectorsPerFrame)
                 {
-                    points.RemoveRange(projector_maximum_number_of_vectors_per_frame_, points.Count - projector_maximum_number_of_vectors_per_frame_);
+                    points.RemoveRange(ProjectorMaximumNumberOfVectorsPerFrame, points.Count - ProjectorMaximumNumberOfVectorsPerFrame);
                 }
-                int wait_status = NativeMethods.JMLaser.jmLaserWaitForDeviceReady(projector_handle_);
-                if (wait_status == NativeMethods.JMLaser.JMLASER_ERROR_OUTPUT_NOT_STARTED)
+                int waitStatus = NativeMethods.JMLaser.jmLaserWaitForDeviceReady(ProjectorHandle);
+                if (waitStatus == NativeMethods.JMLaser.JMLASER_ERROR_OUTPUT_NOT_STARTED)
                 {
-                    if (startOutput())
+                    if (StartOutput())
                     {
-                        wait_status = NativeMethods.JMLaser.jmLaserWaitForDeviceReady(projector_handle_);
+                        waitStatus = NativeMethods.JMLaser.jmLaserWaitForDeviceReady(ProjectorHandle);
                     }
                     else {
                         return false;
                     }
                 }
 
-                if (wait_status == NativeMethods.JMLaser.JMLASER_DEVICE_READY)
+                if (waitStatus == NativeMethods.JMLaser.JMLASER_DEVICE_READY)
                 {
-                    int write_status = NativeMethods.JMLaser.jmLaserWriteFrame(projector_handle_, points.ToArray(), (uint)points.Count, speed, repetitions);
-                    return (write_status == 0);
+                    int writeStatus = NativeMethods.JMLaser.jmLaserWriteFrame(ProjectorHandle, points.ToArray(), (uint)points.Count, speed, repetitions);
+                    return (writeStatus == 0);
                 }
             }
             return false;
         }
 
-        public bool stopOutput()
+        public bool StopOutput()
         {
-            if (projector_handle_ >= 0 && projector_output_started_)
+            if (ProjectorHandle >= 0 && ProjectorOutputStarted)
             {
-                if (NativeMethods.JMLaser.jmLaserStopOutput(projector_handle_) == 0)
+                if (NativeMethods.JMLaser.jmLaserStopOutput(ProjectorHandle) == 0)
                 {
-                    projector_output_started_ = false;
+                    ProjectorOutputStarted = false;
                     return true;
                 }
             }
@@ -392,22 +383,23 @@ namespace LaserProjectorBridge
         {
             StringBuilder str = new StringBuilder();
             str.Append("############################## JMLaserProjector ###############################\n");
-            str.Append("# number_of_projectors:\t\t\t" + s_number_of_projectors_ + "\n");
-            str.Append("# projector_list_entry_index:\t\t" + projector_list_entry_index_ + "\n");
-            str.Append("# projector_handle:\t\t\t" + projector_handle_ + "\n");
-            str.Append("# maximum_number_of_vectors_per_frame:\t" + projector_maximum_number_of_vectors_per_frame_ + "\n");
-            str.Append("# minimum_projection_speed:\t\t" + projector_minimum_speed_ + "\n");
-            str.Append("# maximum_projection_speed:\t\t" + projector_maximum_speed_ + "\n");
-            str.Append("# projection_speed_step:\t\t" + projector_speed_step_ + "\n");
-            str.Append("# network_address:\t\t\t" + projector_network_address_ + "\n");
-            str.Append("# projector_name:\t\t\t" + projector_name_ + "\n");
-            str.Append("# projector_name_from_handle:\t\t" + projector_name_from_handle_ + "\n");
-            str.Append("# projector_friendly_name:\t\t" + projector_friendly_name_ + "\n");
-            str.Append("# projector_family_name:\t\t" + projector_family_name_ + "\n");
-            str.Append("# projector_output_started:\t\t" + projector_output_started_ + "\n");
+            str.Append("# NumberOfProjectors:\t\t\t\t" + NumberOfProjectors + "\n");
+            str.Append("# ProjectorListEntryIndex:\t\t\t" + ProjectorListEntryIndex + "\n");
+            str.Append("# ProjectorHandle:\t\t\t\t" + ProjectorHandle + "\n");
+            str.Append("# ProjectorMaximumNumberOfVectorsPerFrame:\t" + ProjectorMaximumNumberOfVectorsPerFrame + "\n");
+            str.Append("# ProjectorMinimumSpeed:\t\t\t" + ProjectorMinimumSpeed + "\n");
+            str.Append("# ProjectorMaximumSpeed:\t\t\t" + ProjectorMaximumSpeed + "\n");
+            str.Append("# ProjectorSpeedStep:\t\t\t\t" + ProjectorSpeedStep + "\n");
+            str.Append("# ProjectorNetworkAddress:\t\t\t" + ProjectorNetworkAddress + "\n");
+            str.Append("# ProjectorName:\t\t\t\t" + ProjectorName + "\n");
+            str.Append("# ProjectorNameFromHandle:\t\t\t" + ProjectorNameFromHandle + "\n");
+            str.Append("# ProjectorFriendlyName:\t\t\t" + ProjectorFriendlyName + "\n");
+            str.Append("# ProjectorFamilyName:\t\t\t\t" + ProjectorFamilyName + "\n");
+            str.Append("# ProjectorOutputStarted:\t\t\t" + ProjectorOutputStarted + "\n");
             str.Append("###############################################################################\n");
             return str.ToString();
         }
+        #endregion
         // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   <methods/>  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     }
 }
