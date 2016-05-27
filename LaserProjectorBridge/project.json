@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-*",
+  "version": "1.1.0",
   "title": "LaserProjectorBridge",
   "summary": "C# library for communicating with Ethernet laser projectors (such as MediaLas ILP 622 LAN using the jmlaser.dll).",
   "authors": [ "Carlos Miguel Correira da Costa" ],

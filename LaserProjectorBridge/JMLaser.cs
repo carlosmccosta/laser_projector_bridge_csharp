@@ -43,6 +43,18 @@ namespace LaserProjectorBridge
                 public UInt16 yellow;      // 16 bit unsigned	[0, USHRT_MAX]
                 public UInt16 cyan;        // 16 bit unsigned	[0, USHRT_MAX]
                 public UInt16 user4;       // 16 bit unsigned	[0, USHRT_MAX]
+
+                public override string ToString()
+                {
+                    StringBuilder str = new StringBuilder();
+                    str.Append("x: " + x);
+                    str.Append(" | y: " + y);
+                    str.Append(" | r: " + r);
+                    str.Append(" | g: " + g);
+                    str.Append(" | b: " + b);
+                    str.Append(" | i: " + i);
+                    return str.ToString();
+                }
             };
 
 

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace LaserProjectorBridge
@@ -337,14 +338,30 @@ namespace LaserProjectorBridge
             return false;
         }
 
-        public bool SendVectorImageToProjector(ref List<NativeMethods.JMLaser.JMVectorStruct> points, uint speed, uint repetitions)
+        public bool SendVectorImageToProjector(ref List<NativeMethods.JMLaser.JMVectorStruct> points, uint speed, uint repetitions = 0, bool addReverseImage = true)
         {
-            if (ProjectorHandle >= 0 && points.Count > 0 && speed >= ProjectorMinimumSpeed && speed <= ProjectorMaximumSpeed && ProjectorMaximumNumberOfVectorsPerFrame > 0)
+            if (speed < ProjectorMinimumSpeed) { speed = (uint)ProjectorMinimumSpeed; }
+            if (speed > ProjectorMaximumSpeed) { speed = (uint)ProjectorMaximumSpeed; }
+
+            if (ProjectorHandle >= 0 && points.Count > 0 && ProjectorMaximumNumberOfVectorsPerFrame > 0)
             {
                 if (points.Count > ProjectorMaximumNumberOfVectorsPerFrame)
                 {
-                    points.RemoveRange(ProjectorMaximumNumberOfVectorsPerFrame, points.Count - ProjectorMaximumNumberOfVectorsPerFrame);
+                    points.RemoveRange(ProjectorMaximumNumberOfVectorsPerFrame - 1, points.Count - ProjectorMaximumNumberOfVectorsPerFrame + 1);
+                    NativeMethods.JMLaser.JMVectorStruct lastPointOff = points.Last();
+                    lastPointOff.i = 0;
+                    points.Add(lastPointOff);
                 }
+
+                if (addReverseImage && points.Count * 2 < ProjectorMaximumNumberOfVectorsPerFrame)
+                {
+                    int pointsCount = points.Count;
+                    for (int i = pointsCount - 1; i >= 0; --i)
+                    {
+                        points.Add(points[i]);
+                    }
+                }
+
                 int waitStatus = NativeMethods.JMLaser.jmLaserWaitForDeviceReady(ProjectorHandle);
                 if (waitStatus == NativeMethods.JMLaser.JMLASER_ERROR_OUTPUT_NOT_STARTED)
                 {
