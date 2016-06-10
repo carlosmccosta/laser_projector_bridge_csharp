@@ -81,16 +81,43 @@ namespace LaserProjectorBridge
             }
         }
 
+        public void ConvertProjectorOriginToDrawingAreaOrigin(double x, double y, out double newX, out double newY, AxisPosition drawingAreaOriginAxisPosition = AxisPosition.BottomLeft)
+        {
+            switch (drawingAreaOriginAxisPosition)
+            {
+                case AxisPosition.TopLeft:
+                    {
+                        newX = x + DrawingAreaWidth * 0.5;
+                        newY = (DrawingAreaHeight - y) + DrawingAreaHeight * 0.5;
+                        break;
+                    }
+
+                case AxisPosition.BottomLeft:
+                    {
+                        newX = x + DrawingAreaWidth * 0.5;
+                        newY = y + DrawingAreaHeight * 0.5;
+                        break;
+                    }
+
+                case AxisPosition.Middle:
+                    {
+                        newX = x;
+                        newY = y;
+                        break;
+                    }
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(drawingAreaOriginAxisPosition), drawingAreaOriginAxisPosition, null);
+            }
+        }
+
         public bool ConvertPointFromDrawingAreaToProjectorRange(double x, double y, out Int32 xPointInProjectorRange, out Int32 yPointInProjectorRange, AxisPosition originAxisPosition = AxisPosition.BottomLeft)
         {
             double xPointInDrawingAreaAndProjectorOrigin;
             double yPointInDrawingAreaAndProjectorOrigin;
             try
             {
-                checked
-                {
-                    ConvertPointOriginToProjectorOrigin(x, y, out xPointInDrawingAreaAndProjectorOrigin, out yPointInDrawingAreaAndProjectorOrigin, originAxisPosition);
-                }
+                checked { ConvertPointOriginToProjectorOrigin(x, y, out xPointInDrawingAreaAndProjectorOrigin, out yPointInDrawingAreaAndProjectorOrigin, originAxisPosition); }
             }
             catch (System.OverflowException)
             {
@@ -103,10 +130,7 @@ namespace LaserProjectorBridge
 
             try
             {
-                checked
-                {
-                    xPointInProjectorRange = (Int32)((xPointInDrawingAreaAndProjectorOrigin - DrawingAreaXOffset) * _drawingAreaToProjectorRangeXScale);
-                }
+                checked { xPointInProjectorRange = (Int32)((xPointInDrawingAreaAndProjectorOrigin - DrawingAreaXOffset) * _drawingAreaToProjectorRangeXScale); }
             }
             catch (System.OverflowException)
             {
@@ -116,10 +140,7 @@ namespace LaserProjectorBridge
 
             try
             {
-                checked
-                {
-                    yPointInProjectorRange = (Int32)((yPointInDrawingAreaAndProjectorOrigin - DrawingAreaYOffset) * _drawingAreaToProjectorRangeYScale);
-                }
+                checked { yPointInProjectorRange = (Int32)((yPointInDrawingAreaAndProjectorOrigin - DrawingAreaYOffset) * _drawingAreaToProjectorRangeYScale); }
             }
             catch (System.OverflowException)
             {
@@ -130,6 +151,46 @@ namespace LaserProjectorBridge
             return !pointOverflow;
         }
 
+        public bool ConvertPointFromProjectorRangeToDrawingArea(Int32 xPointInProjectorRange, Int32 yPointInProjectorRange, out double xPointInDrawingAreaRange, out double yPointInDrawingAreaRange, AxisPosition originAxisPosition = AxisPosition.BottomLeft)
+        {
+            double xPointInDrawingAreaAndProjectorOrigin;
+            double yPointInDrawingAreaAndProjectorOrigin;
+
+            bool pointOverflow = false;
+
+            try
+            {
+                checked { xPointInDrawingAreaAndProjectorOrigin = ((double)xPointInProjectorRange / _drawingAreaToProjectorRangeXScale) + DrawingAreaXOffset; }
+            }
+            catch (System.OverflowException)
+            {
+                xPointInDrawingAreaAndProjectorOrigin = 0;
+                pointOverflow = true;
+            }
+
+            try
+            {
+                checked { yPointInDrawingAreaAndProjectorOrigin = ((double)yPointInProjectorRange / _drawingAreaToProjectorRangeYScale) + DrawingAreaYOffset; }
+            }
+            catch (System.OverflowException)
+            {
+                yPointInDrawingAreaAndProjectorOrigin = 0;
+                pointOverflow = true;
+            }
+
+            try
+            {
+                checked { ConvertProjectorOriginToDrawingAreaOrigin(xPointInDrawingAreaAndProjectorOrigin, yPointInDrawingAreaAndProjectorOrigin, out xPointInDrawingAreaRange, out yPointInDrawingAreaRange, originAxisPosition); }
+            }
+            catch (System.OverflowException)
+            {
+                xPointInDrawingAreaRange = 0;
+                yPointInDrawingAreaRange = 0;
+                return false;
+            }
+
+            return !pointOverflow;
+        }
 
         public bool AddNewLine(double startX, double startY, double endX, double endY,
             UInt16 red = UInt16.MaxValue, UInt16 green = UInt16.MaxValue, UInt16 blue = UInt16.MaxValue,
