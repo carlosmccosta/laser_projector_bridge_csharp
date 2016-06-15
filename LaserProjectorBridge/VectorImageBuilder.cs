@@ -19,7 +19,8 @@ namespace LaserProjectorBridge
         public double DrawingAreaHeight { get; set; } = 2000.0;
         public double DrawingAreaXOffset { get; set; } = 0.0;
         public double DrawingAreaYOffset { get; set; } = 0.0;
-        public double LineFirstPointMergeDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.001, 2);
+        public double LineFirstPointMergeDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.0005, 2);
+        public double LineFirstPointIgnoreDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.003, 2);
         //public Int32 InterpolationDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.002);
         //public Int32 BlankingDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.002);
         //public int NumberOfPointRepetitionsOnLineMiddlePoints { get; set; } = 1;
@@ -246,8 +247,8 @@ namespace LaserProjectorBridge
             if (VectorImagePoints.Count > 0)
             {
                 NativeMethods.JMLaser.JMVectorStruct lastPoint = VectorImagePoints.Last();
-                double distanceToLastPointSquared = Math.Pow(startPoint.x - lastPoint.x, 2) + Math.Pow(startPoint.y - lastPoint.y, 2);
-                if (distanceToLastPointSquared >= LineFirstPointMergeDistanceSquaredInProjectorRange ||
+                double distanceToLastPointSquared = NativeMethods.JMLaser.JMVectorStructDistanceSquared(startPoint, lastPoint);
+                if (distanceToLastPointSquared >= LineFirstPointIgnoreDistanceSquaredInProjectorRange ||
                     lastPoint.i != startPoint.i || lastPoint.r != startPoint.r || lastPoint.g != startPoint.g ||
                     lastPoint.b != startPoint.b ||
                     lastPoint.cyan != startPoint.cyan || lastPoint.deepblue != startPoint.deepblue ||
@@ -266,9 +267,22 @@ namespace LaserProjectorBridge
                 }
                 else
                 {
-                    lastPoint.x = (Int32)((lastPoint.x + startPoint.x) / 2.0);
-                    lastPoint.y = (Int32)((lastPoint.y + startPoint.y) / 2.0);
-                    ReplaceLastPoint(ref lastPoint);
+                    if (distanceToLastPointSquared > 0 && distanceToLastPointSquared < LineFirstPointMergeDistanceSquaredInProjectorRange)
+                    {
+                        lastPoint.x = (Int32)((lastPoint.x + startPoint.x) / 2.0);
+                        lastPoint.y = (Int32)((lastPoint.y + startPoint.y) / 2.0);
+                        ReplaceLastPoint(ref lastPoint);
+                    }
+
+                    if (VectorImagePoints.Count > 1)
+                    {
+                        NativeMethods.JMLaser.JMVectorStruct penultimatePoint = VectorImagePoints[VectorImagePoints.Count - 2];
+                        double distanceToPenultimatePointSquared = NativeMethods.JMLaser.JMVectorStructDistanceSquared(endPoint, penultimatePoint);
+                        if (distanceToPenultimatePointSquared < LineFirstPointIgnoreDistanceSquaredInProjectorRange)
+                        {
+                            RemoveLastPoint();
+                        }
+                    }
                 }
             }
             else
@@ -318,8 +332,13 @@ namespace LaserProjectorBridge
 
         public void ReplaceLastPoint(ref NativeMethods.JMLaser.JMVectorStruct point)
         {
-            VectorImagePoints.RemoveAt(VectorImagePoints.Count - 1);
+            RemoveLastPoint();
             VectorImagePoints.Add(point);
+        }
+
+        public void RemoveLastPoint()
+        {
+            VectorImagePoints.RemoveAt(VectorImagePoints.Count - 1);
         }
     }
 }

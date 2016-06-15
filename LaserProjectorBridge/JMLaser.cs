@@ -58,6 +58,11 @@ namespace LaserProjectorBridge
             };
 
 
+            public static double JMVectorStructDistanceSquared(JMVectorStruct first, JMVectorStruct second)
+            {
+                return Math.Pow(second.x - first.x, 2) + Math.Pow(second.y - first.y, 2);
+            }
+
 
             /**
              * @brief Enumerate all output devices.
