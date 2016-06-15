@@ -14,16 +14,17 @@ namespace LaserProjectorBridge
         }
 
         #region public fields
+        public List<NativeMethods.JMLaser.JMVectorStruct> VectorImagePoints { get; set; }
         public double DrawingAreaWidth { get; set; } = 2000.0;
         public double DrawingAreaHeight { get; set; } = 2000.0;
         public double DrawingAreaXOffset { get; set; } = 0.0;
         public double DrawingAreaYOffset { get; set; } = 0.0;
-        public Int32 InterpolationDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.01);
-        public Int32 BlankingDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.01);
-        public int NumberOfPointRepetitionsOnLineMiddlePoints { get; set; } = 1;
-        public int NumberOfPointRepetitionsOnLineStartPoint { get; set; } = 1;
-        public int NumberOfPointRepetitionsOnLineEndPoint { get; set; } = 1;
-        public List<NativeMethods.JMLaser.JMVectorStruct> VectorImagePoints { get; set; }
+        public double LineFirstPointMergeDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.001, 2);
+        //public Int32 InterpolationDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.002);
+        //public Int32 BlankingDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.002);
+        //public int NumberOfPointRepetitionsOnLineMiddlePoints { get; set; } = 1;
+        //public int NumberOfPointRepetitionsOnLineStartPoint { get; set; } = 1;
+        //public int NumberOfPointRepetitionsOnLineEndPoint { get; set; } = 1;
         #endregion
 
         #region private fields
@@ -245,7 +246,12 @@ namespace LaserProjectorBridge
             if (VectorImagePoints.Count > 0)
             {
                 NativeMethods.JMLaser.JMVectorStruct lastPoint = VectorImagePoints.Last();
-                if (lastPoint.x != startPoint.x || lastPoint.y != startPoint.y)
+                double distanceToLastPointSquared = Math.Pow(startPoint.x - lastPoint.x, 2) + Math.Pow(startPoint.y - lastPoint.y, 2);
+                if (distanceToLastPointSquared >= LineFirstPointMergeDistanceSquaredInProjectorRange ||
+                    lastPoint.i != startPoint.i || lastPoint.r != startPoint.r || lastPoint.g != startPoint.g ||
+                    lastPoint.b != startPoint.b ||
+                    lastPoint.cyan != startPoint.cyan || lastPoint.deepblue != startPoint.deepblue ||
+                    lastPoint.yellow != startPoint.yellow || lastPoint.user4 != startPoint.user4)
                 {
                     if (lastPoint.i != 0)
                     {
@@ -256,10 +262,20 @@ namespace LaserProjectorBridge
                     NativeMethods.JMLaser.JMVectorStruct startPointOff = startPoint;
                     startPointOff.i = 0;
                     AddNewPoint(ref startPointOff);
+                    AddNewPoint(ref startPoint);
+                }
+                else
+                {
+                    lastPoint.x = (Int32)((lastPoint.x + startPoint.x) / 2.0);
+                    lastPoint.y = (Int32)((lastPoint.y + startPoint.y) / 2.0);
+                    ReplaceLastPoint(ref lastPoint);
                 }
             }
+            else
+            {
+                AddNewPoint(ref startPoint);
+            }
 
-            AddNewPoint(ref startPoint);
             // todo: add line interpolation
             AddNewPoint(ref endPoint);
         }
@@ -297,6 +313,12 @@ namespace LaserProjectorBridge
                 pointStartOff.i = 0;
                 VectorImagePoints.Add(pointStartOff);
             }
+            VectorImagePoints.Add(point);
+        }
+
+        public void ReplaceLastPoint(ref NativeMethods.JMLaser.JMVectorStruct point)
+        {
+            VectorImagePoints.RemoveAt(VectorImagePoints.Count - 1);
             VectorImagePoints.Add(point);
         }
     }
