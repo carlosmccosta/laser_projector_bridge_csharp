@@ -20,9 +20,9 @@ namespace LaserProjectorBridge
         public double DrawingAreaXOffset { get; set; } = 0.0;
         public double DrawingAreaYOffset { get; set; } = 0.0;
         public double LineFirstPointMergeDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.0005, 2);
-        public double LineFirstPointIgnoreDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.003, 2);
-        //public Int32 InterpolationDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.002);
-        //public Int32 BlankingDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.002);
+        public double LineFirstPointIgnoreDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.001, 2);
+        public Int32 InterpolationDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.003);
+        //public Int32 BlankingDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.001);
         //public int NumberOfPointRepetitionsOnLineMiddlePoints { get; set; } = 1;
         //public int NumberOfPointRepetitionsOnLineStartPoint { get; set; } = 1;
         //public int NumberOfPointRepetitionsOnLineEndPoint { get; set; } = 1;
@@ -290,8 +290,7 @@ namespace LaserProjectorBridge
                 AddNewPoint(ref startPoint);
             }
 
-            // todo: add line interpolation
-            AddNewPoint(ref endPoint);
+            AddNewPointWithLinearInterpolationFromLastPoint(ref endPoint);
         }
 
         public bool AddNewPoint(double x, double y, 
@@ -328,6 +327,34 @@ namespace LaserProjectorBridge
                 VectorImagePoints.Add(pointStartOff);
             }
             VectorImagePoints.Add(point);
+        }
+
+        public void AddNewPointWithLinearInterpolationFromLastPoint(ref NativeMethods.JMLaser.JMVectorStruct point)
+        {
+            NativeMethods.JMLaser.JMVectorStruct lastPoint = VectorImagePoints.Last();
+            double distanceToLastPoint = Math.Sqrt(NativeMethods.JMLaser.JMVectorStructDistanceSquared(lastPoint, point));
+            int numberOfInterpolationPoints = (int)(distanceToLastPoint / (double)InterpolationDistanceInProjectorRange) - 1;
+
+            if (numberOfInterpolationPoints > 0)
+            {
+                double tIncrement = 1.0 / (double) numberOfInterpolationPoints;
+                double t = tIncrement;
+                for (int i = 0; i < numberOfInterpolationPoints; ++i)
+                {
+                    NativeMethods.JMLaser.JMVectorStruct newPoint = lastPoint;
+                    newPoint.x = (Int32)LinearInterpolation(lastPoint.x, point.x, t);
+                    newPoint.y = (Int32)LinearInterpolation(lastPoint.y, point.y, t);
+                    AddNewPoint(ref newPoint);
+                    t += tIncrement;
+                } 
+            }
+
+            AddNewPoint(ref point);
+        }
+
+        public double LinearInterpolation(double a, double b, double t)
+        {
+            return a * (1 - t) + b * t;
         }
 
         public void ReplaceLastPoint(ref NativeMethods.JMLaser.JMVectorStruct point)
