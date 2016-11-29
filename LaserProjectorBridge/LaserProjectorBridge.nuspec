@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>LaserProjectorBridge</id>
+    <version>1.2.2</version>
+    <title>LaserProjectorBridge</title>
+    <authors>Carlos Miguel Correira da Costa</authors>
+    <owners>Carlos Miguel Correira da Costa</owners>
+    <licenseUrl>https://github.com/carlosmccosta/laser_projector_bridge_csharp/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/carlosmccosta/laser_projector_bridge_csharp</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>C# library for communicating with Ethernet laser projectors (such as MediaLas ILP 622 LAN using the jmlaser.dll).</description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright 2016</copyright>
+    <tags>LaserProjection ProjectionMapping</tags>
+  </metadata>
+</package>

@@ -21,7 +21,7 @@ namespace LaserProjectorBridge
         public double DrawingAreaYOffset { get; set; } = 0.0;
         public double LineFirstPointMergeDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.0005, 2);
         public double LineFirstPointIgnoreDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.001, 2);
-        public Int32 InterpolationDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.003);
+        public Int32 InterpolationDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.002);
         //public Int32 BlankingDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.001);
         //public int NumberOfPointRepetitionsOnLineMiddlePoints { get; set; } = 1;
         //public int NumberOfPointRepetitionsOnLineStartPoint { get; set; } = 1;
