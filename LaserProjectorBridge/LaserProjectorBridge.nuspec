@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>LaserProjectorBridge</id>
-    <version>1.2.2</version>
+    <version>1.2.2.1</version>
     <title>LaserProjectorBridge</title>
     <authors>Carlos Miguel Correira da Costa</authors>
     <owners>Carlos Miguel Correira da Costa</owners>
@@ -14,4 +14,7 @@
     <copyright>Copyright 2016</copyright>
     <tags>LaserProjection ProjectionMapping</tags>
   </metadata>
+  <files>
+    <file src="jmlaser.dll" target="output\jmlaser.dll" />
+  </files>
 </package>
