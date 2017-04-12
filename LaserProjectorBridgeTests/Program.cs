@@ -189,11 +189,62 @@ namespace LaserProjectorBridgeTests
             CreateLaserOutputPatternCrossScaled(ref points);
         }
 
+        public static void CreateLaserOutputPatternHorizontalDiamondOutsideDrawingAreaUsingVectorImageBuilder(ref LaserProjectorBridge.VectorImageBuilder vectorImageBuilder)
+        {
+            double halfWidth = vectorImageBuilder.DrawingAreaWidth * 0.5;
+            double halfHeight = vectorImageBuilder.DrawingAreaHeight * 0.5;
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, halfHeight, halfWidth, vectorImageBuilder.DrawingAreaHeight * 0.75);
+            vectorImageBuilder.AddNewLine(halfWidth, vectorImageBuilder.DrawingAreaHeight * 0.75, vectorImageBuilder.DrawingAreaWidth * 1.25, halfHeight);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 1.25, halfHeight, halfWidth, vectorImageBuilder.DrawingAreaHeight * 0.25);
+            vectorImageBuilder.AddNewLine(halfWidth, vectorImageBuilder.DrawingAreaHeight * 0.25, vectorImageBuilder.DrawingAreaWidth * -0.25, halfHeight);
+        }
+
+        public static void CreateLaserOutputPatternVerticalDiamondOutsideDrawingAreaUsingVectorImageBuilder(ref LaserProjectorBridge.VectorImageBuilder vectorImageBuilder)
+        {
+            double halfWidth = vectorImageBuilder.DrawingAreaWidth * 0.5;
+            double halfHeight = vectorImageBuilder.DrawingAreaHeight * 0.5;
+            vectorImageBuilder.AddNewLine(halfHeight, vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * 0.75, halfWidth);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaHeight * 0.75, halfWidth, halfHeight, vectorImageBuilder.DrawingAreaWidth * 1.25);
+            vectorImageBuilder.AddNewLine(halfHeight, vectorImageBuilder.DrawingAreaWidth * 1.25, vectorImageBuilder.DrawingAreaHeight * 0.25, halfWidth);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaHeight * 0.25, halfWidth, halfHeight, vectorImageBuilder.DrawingAreaWidth * -0.25);
+        }
+
+        public static void CreateLaserOutputPatternCrossOutsideDrawingAreaUsingVectorImageBuilder(ref LaserProjectorBridge.VectorImageBuilder vectorImageBuilder)
+        {
+            double halfWidth = vectorImageBuilder.DrawingAreaWidth * 0.5;
+            double halfHeight = vectorImageBuilder.DrawingAreaHeight * 0.5;
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * -0.25, vectorImageBuilder.DrawingAreaWidth * 0.25, vectorImageBuilder.DrawingAreaHeight * 0.25);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * -0.25, vectorImageBuilder.DrawingAreaWidth * 0.15, vectorImageBuilder.DrawingAreaHeight * 0.25);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * -0.25, vectorImageBuilder.DrawingAreaWidth * 0.35, vectorImageBuilder.DrawingAreaHeight * 0.25);
+
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * 1.25, vectorImageBuilder.DrawingAreaWidth * 0.25, vectorImageBuilder.DrawingAreaHeight * 0.75);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * 1.25, vectorImageBuilder.DrawingAreaWidth * 0.15, vectorImageBuilder.DrawingAreaHeight * 0.75);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * 1.25, vectorImageBuilder.DrawingAreaWidth * 0.35, vectorImageBuilder.DrawingAreaHeight * 0.75);
+
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 1.25, vectorImageBuilder.DrawingAreaHeight * -0.25, vectorImageBuilder.DrawingAreaWidth * 0.75, vectorImageBuilder.DrawingAreaHeight * 0.25);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 1.25, vectorImageBuilder.DrawingAreaHeight * -0.25, vectorImageBuilder.DrawingAreaWidth * 0.65, vectorImageBuilder.DrawingAreaHeight * 0.25);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 1.25, vectorImageBuilder.DrawingAreaHeight * -0.25, vectorImageBuilder.DrawingAreaWidth * 0.85, vectorImageBuilder.DrawingAreaHeight * 0.25);
+
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 1.25, vectorImageBuilder.DrawingAreaHeight * 1.25, vectorImageBuilder.DrawingAreaWidth * 0.75, vectorImageBuilder.DrawingAreaHeight * 0.75);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 1.25, vectorImageBuilder.DrawingAreaHeight * 1.25, vectorImageBuilder.DrawingAreaWidth * 0.65, vectorImageBuilder.DrawingAreaHeight * 0.75);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 1.25, vectorImageBuilder.DrawingAreaHeight * 1.25, vectorImageBuilder.DrawingAreaWidth * 0.85, vectorImageBuilder.DrawingAreaHeight * 0.75);
+        }
+
+        public static void CreateLaserOutputPatternPlusOutsideDrawingAreaUsingVectorImageBuilder(ref LaserProjectorBridge.VectorImageBuilder vectorImageBuilder)
+        {
+            double halfWidth = vectorImageBuilder.DrawingAreaWidth * 0.5;
+            double halfHeight = vectorImageBuilder.DrawingAreaHeight * 0.5;
+            vectorImageBuilder.AddNewLine(halfWidth * 0.5, vectorImageBuilder.DrawingAreaHeight * 0.25, halfWidth * 0.5, vectorImageBuilder.DrawingAreaHeight * 1.25);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 0.25, halfHeight * 0.5, vectorImageBuilder.DrawingAreaWidth * 1.25, halfHeight * 0.5);
+            vectorImageBuilder.AddNewLine(halfWidth * 1.5, vectorImageBuilder.DrawingAreaHeight * -0.25, halfWidth * 1.5, vectorImageBuilder.DrawingAreaHeight * 0.75);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, halfHeight * 1.5, vectorImageBuilder.DrawingAreaWidth * 0.75, halfHeight * 1.5);
+        }
+
 
         public static void CreateLaserOutputPatternUsingVectorImageBuilder(ref List<LaserProjectorBridge.NativeMethods.JMLaser.JMVectorStruct> points)
         {
             LaserProjectorBridge.VectorImageBuilder vectorImageBuilder = new LaserProjectorBridge.VectorImageBuilder();
-            vectorImageBuilder.InterpolationDistanceInProjectorRange = (Int32)(UInt32.MaxValue * 0.025);
+            vectorImageBuilder.InterpolationDistanceInProjectorRange = (Int32)(UInt32.MaxValue * 0.05);
             vectorImageBuilder.LineFirstPointIgnoreDistanceSquaredInProjectorRange = Math.Pow(UInt32.MaxValue * 0.0013, 2);
             vectorImageBuilder.LineFirstPointMergeDistanceSquaredInProjectorRange = Math.Pow(UInt32.MaxValue * 0.0005, 2);
             vectorImageBuilder.RadialDistortionCoefficientSecondDegreeInvertedUV = 0.08;
@@ -210,6 +261,11 @@ namespace LaserProjectorBridgeTests
 
             CreateLaserOutputPatternPlusFullRangeUsingVectorImageBuilder(ref vectorImageBuilder);
             CreateLaserOutputPatternCrossFullRangeUsingVectorImageBuilder(ref vectorImageBuilder);
+
+            CreateLaserOutputPatternHorizontalDiamondOutsideDrawingAreaUsingVectorImageBuilder(ref vectorImageBuilder);
+            CreateLaserOutputPatternVerticalDiamondOutsideDrawingAreaUsingVectorImageBuilder(ref vectorImageBuilder);
+            CreateLaserOutputPatternCrossOutsideDrawingAreaUsingVectorImageBuilder(ref vectorImageBuilder);
+            CreateLaserOutputPatternPlusOutsideDrawingAreaUsingVectorImageBuilder(ref vectorImageBuilder);
 
             vectorImageBuilder.FinishVectorImage();
         }

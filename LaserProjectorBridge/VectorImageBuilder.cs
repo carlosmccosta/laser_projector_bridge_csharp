@@ -118,21 +118,24 @@ namespace LaserProjectorBridge
             }
         }
 
-        public bool ConvertPointFromDrawingAreaToProjectorRange(double x, double y, out Int32 xPointInProjectorRange, out Int32 yPointInProjectorRange, AxisPosition originAxisPosition = AxisPosition.BottomLeft)
+
+        public bool ConvertPointFromDrawingAreaToProjectorOrigin(double x, double y, out double xPointInDrawingAreaAndProjectorOrigin, out double yPointInDrawingAreaAndProjectorOrigin, AxisPosition originAxisPosition = AxisPosition.BottomLeft)
         {
-            double xPointInDrawingAreaAndProjectorOrigin;
-            double yPointInDrawingAreaAndProjectorOrigin;
             try
             {
                 checked { ConvertPointOriginToProjectorOrigin(x, y, out xPointInDrawingAreaAndProjectorOrigin, out yPointInDrawingAreaAndProjectorOrigin, originAxisPosition); }
+                return true;
             }
             catch (System.OverflowException)
             {
-                xPointInProjectorRange = 0;
-                yPointInProjectorRange = 0;
+                xPointInDrawingAreaAndProjectorOrigin = 0;
+                yPointInDrawingAreaAndProjectorOrigin = 0;
                 return false;
             }
+        }
 
+        public bool ConvertPointFromDrawingAreaInProjectorOriginToProjectorRange(double xPointInDrawingAreaAndProjectorOrigin, double yPointInDrawingAreaAndProjectorOrigin, out Int32 xPointInProjectorRange, out Int32 yPointInProjectorRange)
+        {
             bool pointOverflow = false;
 
             try
@@ -199,18 +202,258 @@ namespace LaserProjectorBridge
             return !pointOverflow;
         }
 
+        public bool TrimLineInDrawingAreaAndProjectorOrigin(ref double startXInProjectorOrigin, ref double startYInProjectorOrigin, ref double endXInProjectorOrigin, ref double endYInProjectorOrigin)
+        {
+            bool startPointValid = IsPointInProjectorOriginWithinDrawingArea(startXInProjectorOrigin, startYInProjectorOrigin);
+            bool endPointValid = IsPointInProjectorOriginWithinDrawingArea(endXInProjectorOrigin, endYInProjectorOrigin);
+            if (startPointValid && endPointValid) return true;
+            if (!startPointValid && !endPointValid) return false;
+
+            double validPointX, validPointY, invalidPointX, invalidPointY;
+            if (!startPointValid)
+            {
+                invalidPointX = startXInProjectorOrigin;
+                invalidPointY = startYInProjectorOrigin;
+                validPointX = endXInProjectorOrigin;
+                validPointY = endYInProjectorOrigin;
+            }
+            else
+            {
+                invalidPointX = endXInProjectorOrigin;
+                invalidPointY = endYInProjectorOrigin;
+                validPointX = startXInProjectorOrigin;
+                validPointY = startYInProjectorOrigin;
+            }
+
+            double halfWidth = DrawingAreaWidth * 0.5;
+            double halfHeight = DrawingAreaHeight * 0.5;
+            double xIntersection = 0.0, yIntersection = 0.0;
+
+            // left
+            if (invalidPointX < -halfWidth && invalidPointY >= -halfHeight && invalidPointY <= halfHeight)
+            {
+                if (LineIntersection(-halfWidth, -halfHeight, -halfWidth, halfHeight, startXInProjectorOrigin, startYInProjectorOrigin, endXInProjectorOrigin, endYInProjectorOrigin, ref xIntersection, ref yIntersection))
+                    xIntersection = -halfWidth;
+                else
+                    return false;
+            }
+
+            // right
+            if (invalidPointX > halfWidth && invalidPointY >= -halfHeight && invalidPointY <= halfHeight)
+            {
+                if (LineIntersection(halfWidth, -halfHeight, halfWidth, halfHeight, startXInProjectorOrigin, startYInProjectorOrigin, endXInProjectorOrigin, endYInProjectorOrigin, ref xIntersection, ref yIntersection))
+                    xIntersection = halfWidth;
+                else
+                    return false;
+            }
+
+            // top
+            if (invalidPointY > halfHeight && invalidPointX >= -halfWidth && invalidPointX <= halfWidth)
+            {
+                if (LineIntersection(-halfWidth, halfHeight, halfWidth, halfHeight, startXInProjectorOrigin, startYInProjectorOrigin, endXInProjectorOrigin, endYInProjectorOrigin, ref xIntersection, ref yIntersection))
+                    yIntersection = halfHeight;
+                else
+                    return false;
+            }
+
+            // bottom
+            if (invalidPointY < -halfHeight && invalidPointX >= -halfWidth && invalidPointX <= halfWidth)
+            {
+                if (LineIntersection(-halfWidth, -halfHeight, halfWidth, -halfHeight, startXInProjectorOrigin, startYInProjectorOrigin, endXInProjectorOrigin, endYInProjectorOrigin, ref xIntersection, ref yIntersection))
+                    yIntersection = -halfHeight;
+                else
+                    return false;
+            }
+
+            // bottom left
+            if (invalidPointX < -halfWidth && invalidPointY < -halfHeight)
+            {
+                double xIntersectionBottom = 0.0, yIntersectionBottom = 0.0;
+                double xIntersectionLeft = 0.0, yIntersectionLeft = 0.0;
+                if (LineIntersection(-halfWidth, -halfHeight, halfWidth, -halfHeight, startXInProjectorOrigin, startYInProjectorOrigin, endXInProjectorOrigin, endYInProjectorOrigin, ref xIntersectionBottom, ref yIntersectionBottom) &&
+                    LineIntersection(-halfWidth, -halfHeight, -halfWidth, halfHeight, startXInProjectorOrigin, startYInProjectorOrigin, endXInProjectorOrigin, endYInProjectorOrigin, ref xIntersectionLeft, ref yIntersectionLeft))
+                {
+                    double distanceToBottomIntersection = Math.Pow(xIntersectionBottom - validPointX, 2.0) + Math.Pow(yIntersectionBottom - validPointY, 2.0);
+                    double distanceToLeftIntersection = Math.Pow(xIntersectionLeft - validPointX, 2.0) + Math.Pow(yIntersectionLeft - validPointY, 2.0);
+
+                    if (distanceToBottomIntersection < distanceToLeftIntersection)
+                    {
+                        xIntersection = xIntersectionBottom;
+                        yIntersection = -halfHeight;
+                    }
+                    else
+                    {
+                        xIntersection = -halfWidth;
+                        yIntersection = yIntersectionLeft;
+                    }
+                }
+                else
+                    return false;
+            }
+
+            // top left
+            if (invalidPointX < -halfWidth && invalidPointY > halfHeight)
+            {
+                double xIntersectionTop = 0.0, yIntersectionTop = 0.0;
+                double xIntersectionLeft = 0.0, yIntersectionLeft = 0.0;
+                if (LineIntersection(-halfWidth, halfHeight, halfWidth, halfHeight, startXInProjectorOrigin, startYInProjectorOrigin, endXInProjectorOrigin, endYInProjectorOrigin, ref xIntersectionTop, ref yIntersectionTop) &&
+                    LineIntersection(-halfWidth, -halfHeight, -halfWidth, halfHeight, startXInProjectorOrigin, startYInProjectorOrigin, endXInProjectorOrigin, endYInProjectorOrigin, ref xIntersectionLeft, ref yIntersectionLeft))
+                {
+                    double distanceToTopIntersection = Math.Pow(xIntersectionTop - validPointX, 2.0) + Math.Pow(yIntersectionTop - validPointY, 2.0);
+                    double distanceToLeftIntersection = Math.Pow(xIntersectionLeft - validPointX, 2.0) + Math.Pow(yIntersectionLeft - validPointY, 2.0);
+
+                    if (distanceToTopIntersection < distanceToLeftIntersection)
+                    {
+                        xIntersection = xIntersectionTop;
+                        yIntersection = halfHeight;
+                    }
+                    else
+                    {
+                        xIntersection = -halfWidth;
+                        yIntersection = yIntersectionLeft;
+                    }
+                }
+                else
+                    return false;
+            }
+
+            // bottom right
+            if (invalidPointX > halfWidth && invalidPointY < -halfHeight)
+            {
+                double xIntersectionBottom = 0.0, yIntersectionBottom = 0.0;
+                double xIntersectionRight = 0.0, yIntersectionRight = 0.0;
+                if (LineIntersection(-halfWidth, -halfHeight, halfWidth, -halfHeight, startXInProjectorOrigin, startYInProjectorOrigin, endXInProjectorOrigin, endYInProjectorOrigin, ref xIntersectionBottom, ref yIntersectionBottom) &&
+                    LineIntersection(halfWidth, -halfHeight, halfWidth, halfHeight, startXInProjectorOrigin, startYInProjectorOrigin, endXInProjectorOrigin, endYInProjectorOrigin, ref xIntersectionRight, ref yIntersectionRight))
+                {
+                    double distanceToBottomIntersection = Math.Pow(xIntersectionBottom - validPointX, 2.0) + Math.Pow(yIntersectionBottom - validPointY, 2.0);
+                    double distanceToRightIntersection = Math.Pow(xIntersectionRight - validPointX, 2.0) + Math.Pow(yIntersectionRight - validPointY, 2.0);
+
+                    if (distanceToBottomIntersection < distanceToRightIntersection)
+                    {
+                        xIntersection = xIntersectionBottom;
+                        yIntersection = -halfHeight;
+                    }
+                    else
+                    {
+                        xIntersection = halfWidth;
+                        yIntersection = yIntersectionRight;
+                    }
+                }
+                else
+                    return false;
+            }
+
+            // top right
+            if (invalidPointX > halfWidth && invalidPointY > halfHeight)
+            {
+                double xIntersectionTop = 0.0, yIntersectionTop = 0.0;
+                double xIntersectionRight = 0.0, yIntersectionRight = 0.0;
+                if (LineIntersection(-halfWidth, halfHeight, halfWidth, halfHeight, startXInProjectorOrigin, startYInProjectorOrigin, endXInProjectorOrigin, endYInProjectorOrigin, ref xIntersectionTop, ref yIntersectionTop) &&
+                    LineIntersection(halfWidth, -halfHeight, halfWidth, halfHeight, startXInProjectorOrigin, startYInProjectorOrigin, endXInProjectorOrigin, endYInProjectorOrigin, ref xIntersectionRight, ref yIntersectionRight))
+                {
+                    double distanceToTopIntersection = Math.Pow(xIntersectionTop - validPointX, 2.0) + Math.Pow(yIntersectionTop - validPointY, 2.0);
+                    double distanceToRightIntersection = Math.Pow(xIntersectionRight - validPointX, 2.0) + Math.Pow(yIntersectionRight - validPointY, 2.0);
+
+                    if (distanceToTopIntersection < distanceToRightIntersection)
+                    {
+                        xIntersection = xIntersectionTop;
+                        yIntersection = halfHeight;
+                    }
+                    else
+                    {
+                        xIntersection = halfWidth;
+                        yIntersection = yIntersectionRight;
+                    }
+                }
+                else
+                    return false;
+            }
+
+            if (!startPointValid)
+            {
+                startXInProjectorOrigin = xIntersection;
+                startYInProjectorOrigin = yIntersection;
+            }
+            else
+            {
+                endXInProjectorOrigin = xIntersection;
+                endYInProjectorOrigin = yIntersection;
+            }
+
+            return true;
+        }
+
+        public bool IsPointInProjectorOriginWithinDrawingArea(double x, double y)
+        {
+            double halfWidth = DrawingAreaWidth * 0.5;
+            double halfHeight = DrawingAreaHeight * 0.5;
+            if (x >= -halfWidth && x <= halfWidth && y >= -halfHeight && y <= halfHeight)
+                return true;
+            else
+                return false;
+        }
+
+        public static bool LineIntersection(double p0_x, double p0_y, double p1_x, double p1_y,
+                                     double p2_x, double p2_y, double p3_x, double p3_y,
+                                     ref double i_x, ref double i_y)
+        {
+            double s02_x, s02_y, s10_x, s10_y, s32_x, s32_y, s_numer, t_numer, denom, t;
+            s10_x = p1_x - p0_x;
+            s10_y = p1_y - p0_y;
+            s32_x = p3_x - p2_x;
+            s32_y = p3_y - p2_y;
+
+            denom = s10_x * s32_y - s32_x * s10_y;
+            if (denom == 0)
+                return false; // Collinear
+
+            bool denomPositive = denom > 0;
+
+            s02_x = p0_x - p2_x;
+            s02_y = p0_y - p2_y;
+            s_numer = s10_x * s02_y - s10_y * s02_x;
+            //if ((s_numer < 0) == denomPositive)
+            //    return false; // No collision
+
+            t_numer = s32_x * s02_y - s32_y * s02_x;
+            //if ((t_numer < 0) == denomPositive)
+            //    return false; // No collision
+
+            //if (((s_numer > denom) == denomPositive) || ((t_numer > denom) == denomPositive))
+            //    return false; // No collision
+            
+            // Collision detected
+            t = t_numer / denom;
+            i_x = p0_x + (t * s10_x);
+            i_y = p0_y + (t * s10_y);
+
+            return true;
+        }
+
         public bool AddNewLine(double startX, double startY, double endX, double endY,
             UInt16 red = UInt16.MaxValue, UInt16 green = UInt16.MaxValue, UInt16 blue = UInt16.MaxValue,
             UInt16 intensity = UInt16.MaxValue, AxisPosition originAxisPosition = AxisPosition.BottomLeft)
         {
+            double startXInProjectorOrigin;
+            double startYInProjectorOrigin;
+            double endXInProjectorOrigin;
+            double endYInProjectorOrigin;
+
+            if (!ConvertPointFromDrawingAreaToProjectorOrigin(startX, startY, out startXInProjectorOrigin, out startYInProjectorOrigin, originAxisPosition)) { return false; }
+            if (!ConvertPointFromDrawingAreaToProjectorOrigin(endX, endY, out endXInProjectorOrigin, out endYInProjectorOrigin, originAxisPosition)) { return false; }
+
+            if (!TrimLineInDrawingAreaAndProjectorOrigin(ref startXInProjectorOrigin, ref startYInProjectorOrigin, ref endXInProjectorOrigin, ref endYInProjectorOrigin)) { return false; }
+
             Int32 startXInProjectorRange;
             Int32 startYInProjectorRange;
             Int32 endXInProjectorRange;
             Int32 endYInProjectorRange;
-            bool lineTrimmed = !ConvertPointFromDrawingAreaToProjectorRange(startX, startY, out startXInProjectorRange, out startYInProjectorRange, originAxisPosition);
-            if (!ConvertPointFromDrawingAreaToProjectorRange(endX, endY, out endXInProjectorRange, out endYInProjectorRange, originAxisPosition)) { lineTrimmed = true; }
+
+            ConvertPointFromDrawingAreaInProjectorOriginToProjectorRange(startXInProjectorOrigin, startYInProjectorOrigin, out startXInProjectorRange, out startYInProjectorRange);
+            ConvertPointFromDrawingAreaInProjectorOriginToProjectorRange(endXInProjectorOrigin, endYInProjectorOrigin, out endXInProjectorRange, out endYInProjectorRange);
+
             AddNewLine(startXInProjectorRange, startYInProjectorRange, endXInProjectorRange, endYInProjectorRange, red, green, blue, intensity);
-            return !lineTrimmed;
+            return true;
         }
 
         public void AddNewLine(Int32 startX, Int32 startY, Int32 endX, Int32 endY,
@@ -302,9 +545,12 @@ namespace LaserProjectorBridge
             UInt16 red = UInt16.MaxValue, UInt16 green = UInt16.MaxValue, UInt16 blue = UInt16.MaxValue,
             UInt16 intensity = UInt16.MaxValue, AxisPosition originAxisPosition = AxisPosition.BottomLeft)
         {
+            double xInProjectorOrigin;
+            double yInProjectorOrigin;
             Int32 xInProjectorRange;
             Int32 yInProjectorRange;
-            if (ConvertPointFromDrawingAreaToProjectorRange(x, y, out xInProjectorRange, out yInProjectorRange, originAxisPosition))
+            if (ConvertPointFromDrawingAreaToProjectorOrigin(x, y, out xInProjectorOrigin, out yInProjectorOrigin, originAxisPosition) &&
+                ConvertPointFromDrawingAreaInProjectorOriginToProjectorRange(xInProjectorOrigin, yInProjectorOrigin, out xInProjectorRange, out yInProjectorRange))
             {
                 AddNewPoint(xInProjectorRange, yInProjectorRange, red, green, blue, intensity);
                 return true;
@@ -357,7 +603,7 @@ namespace LaserProjectorBridge
             AddNewPoint(ref point);
         }
 
-        public double LinearInterpolation(double a, double b, double t)
+        public static double LinearInterpolation(double a, double b, double t)
         {
             return a * (1 - t) + b * t;
         }
