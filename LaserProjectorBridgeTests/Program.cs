@@ -74,9 +74,13 @@ namespace LaserProjectorBridgeTests
         {
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(Int32.MinValue, Int32.MinValue, 0));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(Int32.MinValue, Int32.MinValue, UInt16.MaxValue));
+            points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(0             , Int32.MinValue, UInt16.MaxValue));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(Int32.MaxValue, Int32.MinValue, UInt16.MaxValue));
+            points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(Int32.MaxValue, 0             , UInt16.MaxValue));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(Int32.MaxValue, Int32.MaxValue, UInt16.MaxValue));
+            points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(0             , Int32.MaxValue, UInt16.MaxValue));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(Int32.MinValue, Int32.MaxValue, UInt16.MaxValue));
+            points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(Int32.MinValue, 0             , UInt16.MaxValue));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(Int32.MinValue, Int32.MinValue, UInt16.MaxValue));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(Int32.MinValue, Int32.MinValue, 0));
         }
@@ -84,7 +88,7 @@ namespace LaserProjectorBridgeTests
 
         public static void CreateLaserOutputPatternSquareScaled(ref List<LaserProjectorBridge.NativeMethods.JMLaser.JMVectorStruct> points, double positionScale = 0.9)
         {
-            ushort intensity = (ushort)(UInt16.MaxValue * 0.5);
+            ushort intensity = (ushort)(UInt16.MaxValue * 1.0);
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint((int)(Int32.MinValue * positionScale), (int)(Int32.MinValue * positionScale), 0));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint((int)(Int32.MinValue * positionScale), (int)(Int32.MinValue * positionScale), intensity));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint((int)(Int32.MaxValue * positionScale), (int)(Int32.MinValue * positionScale), intensity));
@@ -92,6 +96,21 @@ namespace LaserProjectorBridgeTests
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint((int)(Int32.MinValue * positionScale), (int)(Int32.MaxValue * positionScale), intensity));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint((int)(Int32.MinValue * positionScale), (int)(Int32.MinValue * positionScale), intensity));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint((int)(Int32.MinValue * positionScale), (int)(Int32.MinValue * positionScale), 0));
+        }
+
+
+        public static void CreateLaserOutputPatternSquareScaledUsingVectorImageBuilder(ref LaserProjectorBridge.VectorImageBuilder vectorImageBuilder, double scale = 1.0)
+        {
+            double xOffset = (vectorImageBuilder.DrawingAreaWidth - (vectorImageBuilder.DrawingAreaWidth * scale)) * 0.5;
+            double yOffset = (vectorImageBuilder.DrawingAreaHeight - (vectorImageBuilder.DrawingAreaHeight * scale)) * 0.5;
+            double xMin = xOffset;
+            double xMax = vectorImageBuilder.DrawingAreaWidth - xOffset;
+            double yMin = yOffset;
+            double yMax = vectorImageBuilder.DrawingAreaHeight - yOffset;
+            vectorImageBuilder.AddNewLine(xMin, yMin, xMax, yMin);
+            vectorImageBuilder.AddNewLine(xMax, yMin, xMax, yMax);
+            vectorImageBuilder.AddNewLine(xMax, yMax, xMin, yMax);
+            vectorImageBuilder.AddNewLine(xMin, yMax, xMin, yMin);
         }
 
 
@@ -104,6 +123,15 @@ namespace LaserProjectorBridgeTests
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(Int32.MinValue,    0,                  UInt16.MaxValue));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(Int32.MaxValue,    0,                  UInt16.MaxValue));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(Int32.MaxValue,    0,                  0));
+        }
+
+
+        public static void CreateLaserOutputPatternPlusFullRangeUsingVectorImageBuilder(ref LaserProjectorBridge.VectorImageBuilder vectorImageBuilder)
+        {
+            double halfWidth = vectorImageBuilder.DrawingAreaWidth * 0.5;
+            double halfHeight = vectorImageBuilder.DrawingAreaHeight * 0.5;
+            vectorImageBuilder.AddNewLine(0.0, halfHeight, vectorImageBuilder.DrawingAreaWidth, halfHeight);
+            vectorImageBuilder.AddNewLine(halfWidth, 0.0, halfWidth, vectorImageBuilder.DrawingAreaHeight);
         }
 
 
@@ -122,6 +150,13 @@ namespace LaserProjectorBridgeTests
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(Int32.MinValue / 2,    Int32.MaxValue / 2, UInt16.MaxValue));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(Int32.MinValue,        Int32.MaxValue,     UInt16.MaxValue));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint(Int32.MinValue,        Int32.MaxValue,     0));
+        }
+
+
+        public static void CreateLaserOutputPatternCrossFullRangeUsingVectorImageBuilder(ref LaserProjectorBridge.VectorImageBuilder vectorImageBuilder)
+        {
+            vectorImageBuilder.AddNewLine(Int32.MinValue, Int32.MaxValue, Int32.MaxValue, Int32.MinValue);
+            vectorImageBuilder.AddNewLine(Int32.MinValue, Int32.MinValue, Int32.MaxValue, Int32.MaxValue);
         }
 
 
@@ -155,10 +190,36 @@ namespace LaserProjectorBridgeTests
         }
 
 
+        public static void CreateLaserOutputPatternUsingVectorImageBuilder(ref List<LaserProjectorBridge.NativeMethods.JMLaser.JMVectorStruct> points)
+        {
+            LaserProjectorBridge.VectorImageBuilder vectorImageBuilder = new LaserProjectorBridge.VectorImageBuilder();
+            vectorImageBuilder.InterpolationDistanceInProjectorRange = (Int32)(UInt32.MaxValue * 0.025);
+            vectorImageBuilder.LineFirstPointIgnoreDistanceSquaredInProjectorRange = Math.Pow(UInt32.MaxValue * 0.0013, 2);
+            vectorImageBuilder.LineFirstPointMergeDistanceSquaredInProjectorRange = Math.Pow(UInt32.MaxValue * 0.0005, 2);
+            vectorImageBuilder.RadialDistortionCoefficientSecondDegreeInvertedUV = 0.08;
+            vectorImageBuilder.RadialDistortionCoefficientSecondDegree = -0.044;
+            vectorImageBuilder.RadialDistortionCoefficientFourthDegree = -0.007;
+            vectorImageBuilder.RadialDistortionCoefficientSixthDegree = -0.005;
+            vectorImageBuilder.StartNewVectorImage();
+            vectorImageBuilder.VectorImagePoints = points;
+
+            for (double scale = 0.0; scale <= 1.0; scale += 0.1)
+            {
+                CreateLaserOutputPatternSquareScaledUsingVectorImageBuilder(ref vectorImageBuilder, scale);
+            }
+
+            CreateLaserOutputPatternPlusFullRangeUsingVectorImageBuilder(ref vectorImageBuilder);
+            CreateLaserOutputPatternCrossFullRangeUsingVectorImageBuilder(ref vectorImageBuilder);
+
+            vectorImageBuilder.FinishVectorImage();
+        }
+
+
         public static void TestJMLaserOutput(int numberOfProjectors)
         {
             List<LaserProjectorBridge.NativeMethods.JMLaser.JMVectorStruct> points = new List<LaserProjectorBridge.NativeMethods.JMLaser.JMVectorStruct>();
-            CreateLaserOutputPattern(ref points);
+            //CreateLaserOutputPattern(ref points);
+            CreateLaserOutputPatternUsingVectorImageBuilder(ref points);
 
             for (int i = 0; i < numberOfProjectors; ++i)
             {
@@ -168,7 +229,7 @@ namespace LaserProjectorBridgeTests
                 Console.WriteLine(laserProjector + "\n\n");
                 laserProjector.StartOutput();
                 Console.WriteLine(">>> Sending pattern to projector " + i);
-                if (laserProjector.SendVectorImageToProjector(ref points, 500, 0))
+                if (laserProjector.SendVectorImageToProjector(ref points, 1000, 0))
                 {
                     Console.WriteLine(">>> - Pattern was sent successfully");
                 }

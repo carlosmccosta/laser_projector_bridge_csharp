@@ -60,7 +60,7 @@ namespace LaserProjectorBridge
 
             public static double JMVectorStructDistanceSquared(JMVectorStruct first, JMVectorStruct second)
             {
-                return Math.Pow(second.x - first.x, 2) + Math.Pow(second.y - first.y, 2);
+                return Math.Pow((double)second.x - (double)first.x, 2.0) + Math.Pow((double)second.y - (double)first.y, 2.0);
             }
 
 

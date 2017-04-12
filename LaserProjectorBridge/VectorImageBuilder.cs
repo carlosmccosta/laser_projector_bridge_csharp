@@ -19,6 +19,10 @@ namespace LaserProjectorBridge
         public double DrawingAreaHeight { get; set; } = 2000.0;
         public double DrawingAreaXOffset { get; set; } = 0.0;
         public double DrawingAreaYOffset { get; set; } = 0.0;
+        public double RadialDistortionCoefficientSecondDegreeInvertedUV { get; set; } = 0.11;
+        public double RadialDistortionCoefficientSecondDegree { get; set; } = -0.04;
+        public double RadialDistortionCoefficientFourthDegree { get; set; } = -0.03;
+        public double RadialDistortionCoefficientSixthDegree { get; set; } = -0.02;
         public double LineFirstPointMergeDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.0005, 2);
         public double LineFirstPointIgnoreDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.001, 2);
         public Int32 InterpolationDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.002);
@@ -49,6 +53,7 @@ namespace LaserProjectorBridge
                     lastPoint.i = 0;
                     VectorImagePoints.Add(lastPoint);
                 }
+                CorrectRadialDistortionOnVectorImage();
                 // todo: laser path optimization and blanking
             }
         }
@@ -355,6 +360,34 @@ namespace LaserProjectorBridge
         public double LinearInterpolation(double a, double b, double t)
         {
             return a * (1 - t) + b * t;
+        }
+
+        public void CorrectRadialDistortion(ref NativeMethods.JMLaser.JMVectorStruct point)
+        {
+            if (RadialDistortionCoefficientSecondDegree != 0 || RadialDistortionCoefficientFourthDegree != 0 || RadialDistortionCoefficientSixthDegree != 0)
+            {
+                double u = (double)point.x / (double)System.Int32.MaxValue;
+                double v = (double)point.y / (double)System.Int32.MaxValue;
+                double uInverted = ((double)System.Int32.MaxValue - Math.Abs((double)point.x)) / (double)System.Int32.MaxValue;
+                double vInverted = ((double)System.Int32.MaxValue - Math.Abs((double)point.y)) / (double)System.Int32.MaxValue;
+                double r = System.Math.Pow(u, 2.0) * System.Math.Pow(v, 2.0);
+                double rWithInvertedUV = System.Math.Pow(uInverted, 2.0) * System.Math.Pow(vInverted, 2.0);
+                double warp = RadialDistortionCoefficientSecondDegreeInvertedUV * rWithInvertedUV +
+                              RadialDistortionCoefficientSecondDegree * r +
+                              RadialDistortionCoefficientFourthDegree * r * r +
+                              RadialDistortionCoefficientSixthDegree  * r * r * r;
+                point.x = (int)((1.0 + warp) * (double)point.x);
+            }
+        }
+
+        public void CorrectRadialDistortionOnVectorImage()
+        {
+            for (int i = 0; i < VectorImagePoints.Count; ++i)
+            {
+                NativeMethods.JMLaser.JMVectorStruct point = VectorImagePoints[i];
+                CorrectRadialDistortion(ref point);
+                VectorImagePoints[i] = point;
+            }
         }
 
         public void ReplaceLastPoint(ref NativeMethods.JMLaser.JMVectorStruct point)
