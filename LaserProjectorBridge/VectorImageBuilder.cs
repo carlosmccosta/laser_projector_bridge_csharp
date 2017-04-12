@@ -19,10 +19,10 @@ namespace LaserProjectorBridge
         public double DrawingAreaHeight { get; set; } = 2000.0;
         public double DrawingAreaXOffset { get; set; } = 0.0;
         public double DrawingAreaYOffset { get; set; } = 0.0;
-        public double RadialDistortionCoefficientSecondDegreeInvertedUV { get; set; } = 0.11;
-        public double RadialDistortionCoefficientSecondDegree { get; set; } = -0.04;
-        public double RadialDistortionCoefficientFourthDegree { get; set; } = -0.03;
-        public double RadialDistortionCoefficientSixthDegree { get; set; } = -0.02;
+        public double RadialDistortionCoefficientSecondDegreeInvertedUV { get; set; } = 0.08;
+        public double RadialDistortionCoefficientSecondDegree { get; set; } = -0.044;
+        public double RadialDistortionCoefficientFourthDegree { get; set; } = -0.007;
+        public double RadialDistortionCoefficientSixthDegree { get; set; } = -0.005;
         public double LineFirstPointMergeDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.0005, 2);
         public double LineFirstPointIgnoreDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.001, 2);
         public Int32 InterpolationDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.002);
