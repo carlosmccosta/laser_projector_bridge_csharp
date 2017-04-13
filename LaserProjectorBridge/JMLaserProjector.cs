@@ -353,10 +353,9 @@ namespace LaserProjectorBridge
                     points.Add(lastPointOff);
                 }
 
-                if (addReverseImage && points.Count * 2 < ProjectorMaximumNumberOfVectorsPerFrame)
+                if (addReverseImage && points.Count * 2 <= ProjectorMaximumNumberOfVectorsPerFrame)
                 {
-                    int pointsCount = points.Count;
-                    for (int i = pointsCount - 1; i >= 0; --i)
+                    for (int i = points.Count - 1; i >= 0; --i)
                     {
                         points.Add(points[i]);
                     }

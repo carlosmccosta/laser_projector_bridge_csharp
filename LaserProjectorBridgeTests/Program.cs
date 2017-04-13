@@ -88,7 +88,7 @@ namespace LaserProjectorBridgeTests
 
         public static void CreateLaserOutputPatternSquareScaled(ref List<LaserProjectorBridge.NativeMethods.JMLaser.JMVectorStruct> points, double positionScale = 0.9)
         {
-            ushort intensity = (ushort)(UInt16.MaxValue * 1.0);
+            ushort intensity = (ushort)(UInt16.MaxValue * 0.9);
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint((int)(Int32.MinValue * positionScale), (int)(Int32.MinValue * positionScale), 0));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint((int)(Int32.MinValue * positionScale), (int)(Int32.MinValue * positionScale), intensity));
             points.Add(LaserProjectorBridge.JMLaserProjector.CreateSingleColorLaserPoint((int)(Int32.MaxValue * positionScale), (int)(Int32.MinValue * positionScale), intensity));
@@ -211,8 +211,6 @@ namespace LaserProjectorBridgeTests
 
         public static void CreateLaserOutputPatternCrossOutsideDrawingAreaUsingVectorImageBuilder(ref LaserProjectorBridge.VectorImageBuilder vectorImageBuilder)
         {
-            double halfWidth = vectorImageBuilder.DrawingAreaWidth * 0.5;
-            double halfHeight = vectorImageBuilder.DrawingAreaHeight * 0.5;
             vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * -0.25, vectorImageBuilder.DrawingAreaWidth * 0.25, vectorImageBuilder.DrawingAreaHeight * 0.25);
             vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * -0.25, vectorImageBuilder.DrawingAreaWidth * 0.15, vectorImageBuilder.DrawingAreaHeight * 0.25);
             vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * -0.25, vectorImageBuilder.DrawingAreaWidth * 0.35, vectorImageBuilder.DrawingAreaHeight * 0.25);
