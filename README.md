@@ -6,6 +6,6 @@ NuGet package available [here](https://www.nuget.org/packages/LaserProjectorBrid
 
 ## Notes
 
-By default the library is built using the "Any CPU" platform and uses the 32 bit [jmlaser.dll](LaserProjectorBridge/jmlaser.dll?raw=true).
+By default the library is built using the "Any CPU" platform and uses the 64 bit [jmlaser.dll](LaserProjectorBridge/jmlaser.dll?raw=true).
 
-If your application is 64 bit, replace the 32 bit [jmlaser.dll](LaserProjectorBridge/jmlaser.dll?raw=true) with the [jmlaser_x64.dll](LaserProjectorBridge/jmlaser_x64.dll?raw=true) in your application build directory (the jmlaser_x64.dll must be renamed to jmlaser.dll in order to DllImport find the dll).
+If your application is 32 bit, replace the 64 bit [jmlaser.dll](LaserProjectorBridge/jmlaser.dll?raw=true) with the [jmlaser_x86.dll](LaserProjectorBridge/jmlaser_x86.dll?raw=true) in your application build directory (the jmlaser_x86.dll must be renamed to jmlaser.dll in order to DllImport find the dll).
