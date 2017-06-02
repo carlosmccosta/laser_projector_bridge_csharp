@@ -26,6 +26,8 @@ namespace LaserProjectorBridge
         public double LineFirstPointMergeDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.0005, 2);
         public double LineFirstPointIgnoreDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.001, 2);
         public Int32 InterpolationDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.002);
+        public Int32 NumberOfBlankingPointsForLineStartAndEnd { get; set; } = 1;
+        public Int32 MaximmNumberOfPoints { get; set; } = 16000;
         //public Int32 BlankingDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.001);
         //public int NumberOfPointRepetitionsOnLineMiddlePoints { get; set; } = 1;
         //public int NumberOfPointRepetitionsOnLineStartPoint { get; set; } = 1;
@@ -51,10 +53,25 @@ namespace LaserProjectorBridge
                 if (lastPoint.i != 0)
                 {
                     lastPoint.i = 0;
-                    VectorImagePoints.Add(lastPoint);
+                    AddNewPoint(ref lastPoint);
+
+                    for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd; ++i)
+                        AddNewPoint(ref lastPoint);
                 }
                 CorrectRadialDistortionOnVectorImage();
                 // todo: laser path optimization and blanking
+            }
+        }
+
+        public void AddReverseImage()
+        {
+            if (VectorImagePoints.Count * 2 <= MaximmNumberOfPoints)
+            {
+                for (int i = VectorImagePoints.Count - 1; i >= 0; --i)
+                {
+                    NativeMethods.JMLaser.JMVectorStruct point = VectorImagePoints[i];
+                    AddNewPoint(ref point);
+                }
             }
         }
 
@@ -442,11 +459,10 @@ namespace LaserProjectorBridge
             ConvertPointFromDrawingAreaInProjectorOriginToProjectorRange(startXInProjectorOrigin, startYInProjectorOrigin, out startXInProjectorRange, out startYInProjectorRange);
             ConvertPointFromDrawingAreaInProjectorOriginToProjectorRange(endXInProjectorOrigin, endYInProjectorOrigin, out endXInProjectorRange, out endYInProjectorRange);
 
-            AddNewLine(startXInProjectorRange, startYInProjectorRange, endXInProjectorRange, endYInProjectorRange, red, green, blue, intensity);
-            return true;
+            return AddNewLine(startXInProjectorRange, startYInProjectorRange, endXInProjectorRange, endYInProjectorRange, red, green, blue, intensity);
         }
 
-        public void AddNewLine(Int32 startX, Int32 startY, Int32 endX, Int32 endY,
+        public bool AddNewLine(Int32 startX, Int32 startY, Int32 endX, Int32 endY,
             UInt16 red = UInt16.MaxValue, UInt16 green = UInt16.MaxValue, UInt16 blue = UInt16.MaxValue, UInt16 intensity = UInt16.MaxValue)
         {
             var startPoint = new NativeMethods.JMLaser.JMVectorStruct()
@@ -477,11 +493,14 @@ namespace LaserProjectorBridge
                 user4 = UInt16.MaxValue
             };
 
-            AddNewLine(ref startPoint, ref endPoint);
+            return AddNewLine(ref startPoint, ref endPoint);
         }
 
-        public void AddNewLine(ref NativeMethods.JMLaser.JMVectorStruct startPoint, ref NativeMethods.JMLaser.JMVectorStruct endPoint)
+        public bool AddNewLine(ref NativeMethods.JMLaser.JMVectorStruct startPoint, ref NativeMethods.JMLaser.JMVectorStruct endPoint)
         {
+            if (VectorImagePoints.Count + 2 > MaximmNumberOfPoints)
+                return false;
+
             if (VectorImagePoints.Count > 0)
             {
                 NativeMethods.JMLaser.JMVectorStruct lastPoint = VectorImagePoints.Last();
@@ -498,9 +517,17 @@ namespace LaserProjectorBridge
                         AddNewPoint(ref lastPoint);
                     }
 
+                    NativeMethods.JMLaser.JMVectorStruct lastPointOff = VectorImagePoints.Last();
+                    lastPointOff.i = 0;
+                    for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd; ++i)
+                        AddNewPoint(ref lastPointOff);
+
                     NativeMethods.JMLaser.JMVectorStruct startPointOff = startPoint;
                     startPointOff.i = 0;
                     AddNewPoint(ref startPointOff);
+                    for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd; ++i)
+                        AddNewPoint(ref startPointOff);
+
                     AddNewPoint(ref startPoint);
                 }
                 else
@@ -525,10 +552,16 @@ namespace LaserProjectorBridge
             }
             else
             {
+                NativeMethods.JMLaser.JMVectorStruct startPointOff = startPoint;
+                startPointOff.i = 0;
+                AddNewPoint(ref startPointOff);
+                for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd; ++i)
+                    AddNewPoint(ref startPointOff);
+
                 AddNewPoint(ref startPoint);
             }
 
-            AddNewPointWithLinearInterpolationFromLastPoint(ref endPoint);
+            return AddNewPointWithLinearInterpolationFromLastPoint(ref endPoint);
         }
 
         public bool AddNewPoint(double x, double y, 
@@ -548,7 +581,7 @@ namespace LaserProjectorBridge
             return false;
         }
 
-        public void AddNewPoint(Int32 x, Int32 y, 
+        public bool AddNewPoint(Int32 x, Int32 y, 
             UInt16 red = UInt16.MaxValue, UInt16 green = UInt16.MaxValue, UInt16 blue = UInt16.MaxValue, UInt16 intensity = UInt16.MaxValue)
         {
             var newPoint = new NativeMethods.JMLaser.JMVectorStruct()
@@ -556,41 +589,55 @@ namespace LaserProjectorBridge
                 x = x, y = y, r = red, g = green, b = blue, i = intensity, deepblue = UInt16.MaxValue, yellow = UInt16.MaxValue, cyan = UInt16.MaxValue, user4 = UInt16.MaxValue
             };
 
-            AddNewPoint(ref newPoint);
+            return AddNewPoint(ref newPoint);
         }
 
-        public void AddNewPoint(ref NativeMethods.JMLaser.JMVectorStruct point)
+        public bool AddNewPoint(ref NativeMethods.JMLaser.JMVectorStruct point)
         {
-            if (VectorImagePoints.Count == 0)
+            if (VectorImagePoints.Count < MaximmNumberOfPoints)
             {
-                NativeMethods.JMLaser.JMVectorStruct pointStartOff = point;
-                pointStartOff.i = 0;
-                VectorImagePoints.Add(pointStartOff);
-            }
-            VectorImagePoints.Add(point);
-        }
-
-        public void AddNewPointWithLinearInterpolationFromLastPoint(ref NativeMethods.JMLaser.JMVectorStruct point)
-        {
-            NativeMethods.JMLaser.JMVectorStruct lastPoint = VectorImagePoints.Last();
-            double distanceToLastPoint = Math.Sqrt(NativeMethods.JMLaser.JMVectorStructDistanceSquared(lastPoint, point));
-            int numberOfInterpolationPoints = (int)(distanceToLastPoint / (double)InterpolationDistanceInProjectorRange) - 1;
-
-            if (numberOfInterpolationPoints > 0)
-            {
-                double tIncrement = 1.0 / (double) numberOfInterpolationPoints;
-                double t = tIncrement;
-                for (int i = 0; i < numberOfInterpolationPoints; ++i)
+                if (VectorImagePoints.Count == 0)
                 {
-                    NativeMethods.JMLaser.JMVectorStruct newPoint = lastPoint;
-                    newPoint.x = (Int32)LinearInterpolation(lastPoint.x, point.x, t);
-                    newPoint.y = (Int32)LinearInterpolation(lastPoint.y, point.y, t);
-                    AddNewPoint(ref newPoint);
-                    t += tIncrement;
-                } 
+                    NativeMethods.JMLaser.JMVectorStruct pointStartOff = point;
+                    pointStartOff.i = 0;
+                    VectorImagePoints.Add(pointStartOff);
+                }
+                VectorImagePoints.Add(point);
+                return true;
             }
 
-            AddNewPoint(ref point);
+            return false;
+        }
+
+        public bool AddNewPointWithLinearInterpolationFromLastPoint(ref NativeMethods.JMLaser.JMVectorStruct point)
+        {
+            if (InterpolationDistanceInProjectorRange > 0)
+            {
+                NativeMethods.JMLaser.JMVectorStruct lastPoint = VectorImagePoints.Last();
+                double distanceToLastPoint = Math.Sqrt(NativeMethods.JMLaser.JMVectorStructDistanceSquared(lastPoint, point));
+                int numberOfInterpolationPoints = (int)(distanceToLastPoint / (double)InterpolationDistanceInProjectorRange) - 1;
+
+                if (VectorImagePoints.Count + numberOfInterpolationPoints > MaximmNumberOfPoints)
+                {
+                    numberOfInterpolationPoints = MaximmNumberOfPoints - VectorImagePoints.Count - 1;
+                }
+
+                if (numberOfInterpolationPoints > 0)
+                {
+                    double tIncrement = 1.0 / (double)numberOfInterpolationPoints;
+                    double t = tIncrement;
+                    for (int i = 0; i < numberOfInterpolationPoints; ++i)
+                    {
+                        NativeMethods.JMLaser.JMVectorStruct newPoint = lastPoint;
+                        newPoint.x = (Int32)LinearInterpolation(lastPoint.x, point.x, t);
+                        newPoint.y = (Int32)LinearInterpolation(lastPoint.y, point.y, t);
+                        AddNewPoint(ref newPoint);
+                        t += tIncrement;
+                    }
+                }
+            }
+
+            return AddNewPoint(ref point);
         }
 
         public static double LinearInterpolation(double a, double b, double t)
@@ -628,13 +675,37 @@ namespace LaserProjectorBridge
 
         public void ReplaceLastPoint(ref NativeMethods.JMLaser.JMVectorStruct point)
         {
-            RemoveLastPoint();
+            if (VectorImagePoints.Count > 0)
+                RemoveLastPoint();
+
             VectorImagePoints.Add(point);
         }
 
         public void RemoveLastPoint()
         {
-            VectorImagePoints.RemoveAt(VectorImagePoints.Count - 1);
+            if (VectorImagePoints.Count > 0)
+                VectorImagePoints.RemoveAt(VectorImagePoints.Count - 1);
+        }
+
+        public void AddLastPointTurnedOff()
+        {
+            if (VectorImagePoints.Count > 0)
+            {
+                NativeMethods.JMLaser.JMVectorStruct point = VectorImagePoints.Last();
+                point.i = 0;
+                AddNewPoint(ref point);
+            }
+        }
+
+        public void AddLastPointBlankingPoints()
+        {
+            if (VectorImagePoints.Count > 0)
+            {
+                NativeMethods.JMLaser.JMVectorStruct point = VectorImagePoints.Last();
+                point.i = 0;
+                for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd; ++i)
+                    AddNewPoint(ref point);
+            }
         }
     }
 }

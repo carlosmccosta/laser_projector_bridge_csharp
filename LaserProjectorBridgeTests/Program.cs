@@ -22,7 +22,8 @@ namespace LaserProjectorBridgeTests
                 Console.WriteLine(">>> No projectors were found!");
                 return -1;
             }
-            else {
+            else
+            {
                 //TestJMLaserProjectorSetup(number_of_projectors);
                 TestJMLaserOutput(numberOfProjectors);
             }
