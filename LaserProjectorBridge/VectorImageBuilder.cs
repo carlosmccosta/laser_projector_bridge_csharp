@@ -25,7 +25,7 @@ namespace LaserProjectorBridge
         public double RadialDistortionCoefficientSixthDegree { get; set; } = -0.005;
         public double LineFirstPointMergeDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.0005, 2);
         public double LineFirstPointIgnoreDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.001, 2);
-        public Int32 InterpolationDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.002);
+        public Int64 InterpolationDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.002);
         public Int32 NumberOfBlankingPointsForLineStartAndEnd { get; set; } = 1;
         public Int32 MaximmNumberOfPoints { get; set; } = 16000;
         //public Int32 BlankingDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.001);
@@ -75,7 +75,7 @@ namespace LaserProjectorBridge
             }
         }
 
-        public void ConvertPointOriginToProjectorOrigin(double x, double y, out double newX, out double newY, AxisPosition pointOriginAxisPosition = AxisPosition.BottomLeft)
+        public void convertPointFromDrawingAreaToProjectorOrigin(double x, double y, out double newX, out double newY, AxisPosition pointOriginAxisPosition = AxisPosition.BottomLeft)
         {
             switch (pointOriginAxisPosition)
             {
@@ -140,7 +140,7 @@ namespace LaserProjectorBridge
         {
             try
             {
-                checked { ConvertPointOriginToProjectorOrigin(x, y, out xPointInDrawingAreaAndProjectorOrigin, out yPointInDrawingAreaAndProjectorOrigin, originAxisPosition); }
+                checked { convertPointFromDrawingAreaToProjectorOrigin(x, y, out xPointInDrawingAreaAndProjectorOrigin, out yPointInDrawingAreaAndProjectorOrigin, originAxisPosition); }
                 return true;
             }
             catch (System.OverflowException)
@@ -410,33 +410,6 @@ namespace LaserProjectorBridge
                 return false;
         }
 
-        public static bool LineIntersection(double p0_x, double p0_y, double p1_x, double p1_y,
-                                     double p2_x, double p2_y, double p3_x, double p3_y,
-                                     ref double i_x, ref double i_y)
-        {
-            double s02_x, s02_y, s10_x, s10_y, s32_x, s32_y, t_numerator, denominator, t;
-            s10_x = p1_x - p0_x;
-            s10_y = p1_y - p0_y;
-            s32_x = p3_x - p2_x;
-            s32_y = p3_y - p2_y;
-
-            denominator = s10_x * s32_y - s32_x * s10_y;
-            if (denominator == 0)
-                return false; // Collinear
-
-            s02_x = p0_x - p2_x;
-            s02_y = p0_y - p2_y;
-
-            t_numerator = s32_x * s02_y - s32_y * s02_x;
-
-            // Collision detected
-            t = t_numerator / denominator;
-            i_x = p0_x + (t * s10_x);
-            i_y = p0_y + (t * s10_y);
-
-            return true;
-        }
-
         public bool AddNewLine(double startX, double startY, double endX, double endY,
             UInt16 red = UInt16.MaxValue, UInt16 green = UInt16.MaxValue, UInt16 blue = UInt16.MaxValue,
             UInt16 intensity = UInt16.MaxValue, AxisPosition originAxisPosition = AxisPosition.BottomLeft)
@@ -640,53 +613,6 @@ namespace LaserProjectorBridge
             return AddNewPoint(ref point);
         }
 
-        public static double LinearInterpolation(double a, double b, double t)
-        {
-            return a * (1 - t) + b * t;
-        }
-
-        public void CorrectRadialDistortion(ref NativeMethods.JMLaser.JMVectorStruct point)
-        {
-            if (RadialDistortionCoefficientSecondDegree != 0 || RadialDistortionCoefficientFourthDegree != 0 || RadialDistortionCoefficientSixthDegree != 0)
-            {
-                double u = (double)point.x / (double)System.Int32.MaxValue;
-                double v = (double)point.y / (double)System.Int32.MaxValue;
-                double uInverted = ((double)System.Int32.MaxValue - Math.Abs((double)point.x)) / (double)System.Int32.MaxValue;
-                double vInverted = ((double)System.Int32.MaxValue - Math.Abs((double)point.y)) / (double)System.Int32.MaxValue;
-                double r = System.Math.Pow(u, 2.0) * System.Math.Pow(v, 2.0);
-                double rWithInvertedUV = System.Math.Pow(uInverted, 2.0) * System.Math.Pow(vInverted, 2.0);
-                double warp = RadialDistortionCoefficientSecondDegreeInvertedUV * rWithInvertedUV +
-                              RadialDistortionCoefficientSecondDegree * r +
-                              RadialDistortionCoefficientFourthDegree * r * r +
-                              RadialDistortionCoefficientSixthDegree  * r * r * r;
-                point.x = (int)((1.0 + warp) * (double)point.x);
-            }
-        }
-
-        public void CorrectRadialDistortionOnVectorImage()
-        {
-            for (int i = 0; i < VectorImagePoints.Count; ++i)
-            {
-                NativeMethods.JMLaser.JMVectorStruct point = VectorImagePoints[i];
-                CorrectRadialDistortion(ref point);
-                VectorImagePoints[i] = point;
-            }
-        }
-
-        public void ReplaceLastPoint(ref NativeMethods.JMLaser.JMVectorStruct point)
-        {
-            if (VectorImagePoints.Count > 0)
-                RemoveLastPoint();
-
-            VectorImagePoints.Add(point);
-        }
-
-        public void RemoveLastPoint()
-        {
-            if (VectorImagePoints.Count > 0)
-                VectorImagePoints.RemoveAt(VectorImagePoints.Count - 1);
-        }
-
         public void AddLastPointTurnedOff()
         {
             if (VectorImagePoints.Count > 0)
@@ -706,6 +632,80 @@ namespace LaserProjectorBridge
                 for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd; ++i)
                     AddNewPoint(ref point);
             }
+        }
+
+        public void ReplaceLastPoint(ref NativeMethods.JMLaser.JMVectorStruct point)
+        {
+            if (VectorImagePoints.Count > 0)
+                RemoveLastPoint();
+
+            VectorImagePoints.Add(point);
+        }
+
+        public void RemoveLastPoint()
+        {
+            if (VectorImagePoints.Count > 0)
+                VectorImagePoints.RemoveAt(VectorImagePoints.Count - 1);
+        }
+
+        public void CorrectRadialDistortion(ref NativeMethods.JMLaser.JMVectorStruct point)
+        {
+            if (RadialDistortionCoefficientSecondDegree != 0 || RadialDistortionCoefficientFourthDegree != 0 || RadialDistortionCoefficientSixthDegree != 0)
+            {
+                double u = (double)point.x / (double)System.Int32.MaxValue;
+                double v = (double)point.y / (double)System.Int32.MaxValue;
+                double uInverted = ((double)System.Int32.MaxValue - Math.Abs((double)point.x)) / (double)System.Int32.MaxValue;
+                double vInverted = ((double)System.Int32.MaxValue - Math.Abs((double)point.y)) / (double)System.Int32.MaxValue;
+                double r = System.Math.Pow(u, 2.0) * System.Math.Pow(v, 2.0);
+                double rWithInvertedUV = System.Math.Pow(uInverted, 2.0) * System.Math.Pow(vInverted, 2.0);
+                double warp = RadialDistortionCoefficientSecondDegreeInvertedUV * rWithInvertedUV +
+                              RadialDistortionCoefficientSecondDegree * r +
+                              RadialDistortionCoefficientFourthDegree * r * r +
+                              RadialDistortionCoefficientSixthDegree * r * r * r;
+                point.x = (int)((1.0 + warp) * (double)point.x);
+            }
+        }
+
+        public void CorrectRadialDistortionOnVectorImage()
+        {
+            for (int i = 0; i < VectorImagePoints.Count; ++i)
+            {
+                NativeMethods.JMLaser.JMVectorStruct point = VectorImagePoints[i];
+                CorrectRadialDistortion(ref point);
+                VectorImagePoints[i] = point;
+            }
+        }
+
+        public static bool LineIntersection(double p0_x, double p0_y, double p1_x, double p1_y,
+            double p2_x, double p2_y, double p3_x, double p3_y,
+            ref double i_x, ref double i_y, double comparison_epsilon = 1e-8)
+        {
+            double s02_x, s02_y, s10_x, s10_y, s32_x, s32_y, t_numerator, denominator, t;
+            s10_x = p1_x - p0_x;
+            s10_y = p1_y - p0_y;
+            s32_x = p3_x - p2_x;
+            s32_y = p3_y - p2_y;
+
+            denominator = s10_x * s32_y - s32_x * s10_y;
+            if (Math.Abs(denominator) < comparison_epsilon)
+                return false; // Collinear
+
+            s02_x = p0_x - p2_x;
+            s02_y = p0_y - p2_y;
+
+            t_numerator = s32_x * s02_y - s32_y * s02_x;
+
+            // Collision detected
+            t = t_numerator / denominator;
+            i_x = p0_x + (t * s10_x);
+            i_y = p0_y + (t * s10_y);
+
+            return true;
+        }
+
+        public static double LinearInterpolation(double a, double b, double t)
+        {
+            return a * (1 - t) + b * t;
         }
     }
 }

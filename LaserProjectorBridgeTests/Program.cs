@@ -243,7 +243,7 @@ namespace LaserProjectorBridgeTests
         public static void CreateLaserOutputPatternUsingVectorImageBuilder(ref List<LaserProjectorBridge.NativeMethods.JMLaser.JMVectorStruct> points)
         {
             LaserProjectorBridge.VectorImageBuilder vectorImageBuilder = new LaserProjectorBridge.VectorImageBuilder();
-            vectorImageBuilder.InterpolationDistanceInProjectorRange = (Int32)(UInt32.MaxValue * 0.05);
+            vectorImageBuilder.InterpolationDistanceInProjectorRange = (Int64)(UInt32.MaxValue * 0.05);
             vectorImageBuilder.LineFirstPointIgnoreDistanceSquaredInProjectorRange = Math.Pow(UInt32.MaxValue * 0.0013, 2);
             vectorImageBuilder.LineFirstPointMergeDistanceSquaredInProjectorRange = Math.Pow(UInt32.MaxValue * 0.0005, 2);
             vectorImageBuilder.RadialDistortionCoefficientSecondDegreeInvertedUV = 0.08;
