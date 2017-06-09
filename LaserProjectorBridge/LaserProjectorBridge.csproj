@@ -35,6 +35,7 @@
   <ItemGroup>
     <Compile Include="JMLaser.cs" />
     <Compile Include="JMLaserProjector.cs" />
+    <Compile Include="PatternBuilder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VectorImageBuilder.cs" />
   </ItemGroup>

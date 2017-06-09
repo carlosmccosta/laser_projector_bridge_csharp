@@ -676,29 +676,29 @@ namespace LaserProjectorBridge
             }
         }
 
-        public static bool LineIntersection(double p0_x, double p0_y, double p1_x, double p1_y,
-            double p2_x, double p2_y, double p3_x, double p3_y,
-            ref double i_x, ref double i_y, double comparison_epsilon = 1e-8)
+        public static bool LineIntersection(double p0X, double p0Y, double p1X, double p1Y,
+            double p2X, double p2Y, double p3X, double p3Y,
+            ref double iX, ref double iY, double comparisonEpsilon = 1e-8)
         {
-            double s02_x, s02_y, s10_x, s10_y, s32_x, s32_y, t_numerator, denominator, t;
-            s10_x = p1_x - p0_x;
-            s10_y = p1_y - p0_y;
-            s32_x = p3_x - p2_x;
-            s32_y = p3_y - p2_y;
+            double s02X, s02Y, s10X, s10Y, s32X, s32Y, tNumerator, denominator, t;
+            s10X = p1X - p0X;
+            s10Y = p1Y - p0Y;
+            s32X = p3X - p2X;
+            s32Y = p3Y - p2Y;
 
-            denominator = s10_x * s32_y - s32_x * s10_y;
-            if (Math.Abs(denominator) < comparison_epsilon)
+            denominator = s10X * s32Y - s32X * s10Y;
+            if (Math.Abs(denominator) < comparisonEpsilon)
                 return false; // Collinear
 
-            s02_x = p0_x - p2_x;
-            s02_y = p0_y - p2_y;
+            s02X = p0X - p2X;
+            s02Y = p0Y - p2Y;
 
-            t_numerator = s32_x * s02_y - s32_y * s02_x;
+            tNumerator = s32X * s02Y - s32Y * s02X;
 
             // Collision detected
-            t = t_numerator / denominator;
-            i_x = p0_x + (t * s10_x);
-            i_y = p0_y + (t * s10_y);
+            t = tNumerator / denominator;
+            iX = p0X + (t * s10X);
+            iY = p0Y + (t * s10Y);
 
             return true;
         }
