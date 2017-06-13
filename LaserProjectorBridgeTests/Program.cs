@@ -84,14 +84,17 @@ namespace LaserProjectorBridgeTests
         }
 
 
-        public static void CreateLaserOutputPatternUsingVectorImageBuilder(ref List<LaserProjectorBridge.NativeMethods.JMLaser.JMVectorStruct> points)
+        public static void CreateLaserOutputPatternUsingVectorImageBuilder(ref List<LaserProjectorBridge.NativeMethods.JMLaser.JMVectorStruct> points, bool showDistortionCorrectionOnly = true)
         {
             LaserProjectorBridge.VectorImageBuilder vectorImageBuilder = new LaserProjectorBridge.VectorImageBuilder();
-            vectorImageBuilder.InterpolationDistanceInProjectorRange = (Int64)(UInt32.MaxValue * 0.025);
-            vectorImageBuilder.LineFirstPointIgnoreDistanceSquaredInProjectorRange = Math.Pow(UInt32.MaxValue * 0.0013, 2);
-            vectorImageBuilder.LineFirstPointMergeDistanceSquaredInProjectorRange = Math.Pow(UInt32.MaxValue * 0.0005, 2);
+            vectorImageBuilder.InterpolationDistanceInProjectorRange = (Int64)(UInt32.MaxValue * 0.05);
+            vectorImageBuilder.LineFirstPointIgnoreDistanceSquaredInProjectorRange = -Math.Pow(UInt32.MaxValue * 0.0013, 2);
+            vectorImageBuilder.LineFirstPointMergeDistanceSquaredInProjectorRange = -Math.Pow(UInt32.MaxValue * 0.0005, 2);
             vectorImageBuilder.NumberOfBlankingPointsForLineStartAndEnd = 2;
-            vectorImageBuilder.RadialDistortionCoefficientScalingX  = 0.084;
+            vectorImageBuilder.DrawingAreaXFocalLengthInPixels = 2753.0;
+            vectorImageBuilder.DrawingAreaYFocalLengthInPixels = 2753.0;
+            vectorImageBuilder.DistanceBetweenMirrorsInProjectorRangePercentage = 0.01;
+            vectorImageBuilder.RadialDistortionCoefficientScalingX     = 0.084;
             vectorImageBuilder.RadialDistortionCoefficientFirstDegree  = -0.073;
             vectorImageBuilder.RadialDistortionCoefficientSecondDegree = -0.013;
             vectorImageBuilder.RadialDistortionCoefficientThirdDegree  = -0.005;
@@ -101,19 +104,25 @@ namespace LaserProjectorBridgeTests
             vectorImageBuilder.StartNewVectorImage();
             vectorImageBuilder.VectorImagePoints = points;
 
-            LaserProjectorBridge.PatternBuilder.CreateGridInProjectorRange(ref vectorImageBuilder, 10, 10, (Int32)(UInt32.MaxValue / 10), (Int32)(UInt32.MaxValue / 10), Int32.MinValue, Int32.MinValue);
-            //LaserProjectorBridge.PatternBuilder.CreateGridInProjectorRange(ref vectorImageBuilder, 6, 6, (Int32)(UInt32.MaxValue / 10), (Int32)(UInt32.MaxValue / 10), Int32.MinValue + (Int32)((UInt32.MaxValue / 10) * 3), Int32.MinValue + (Int32)((UInt32.MaxValue / 10) * 3));
+            if (showDistortionCorrectionOnly)
+            {
+                LaserProjectorBridge.PatternBuilder.CreateGridInProjectorRange(ref vectorImageBuilder, 10, 10, (Int32)(UInt32.MaxValue / 10), (Int32)(UInt32.MaxValue / 10), Int32.MinValue, Int32.MinValue);
+                //LaserProjectorBridge.PatternBuilder.CreateGridInProjectorRange(ref vectorImageBuilder, 8, 8, (Int32)(UInt32.MaxValue / 10), (Int32)(UInt32.MaxValue / 10), Int32.MinValue + (Int32)((UInt32.MaxValue / 10) * 1), Int32.MinValue + (Int32)((UInt32.MaxValue / 10) * 1));
+                //LaserProjectorBridge.PatternBuilder.CreateGridInProjectorRange(ref vectorImageBuilder, 6, 6, (Int32)(UInt32.MaxValue / 10), (Int32)(UInt32.MaxValue / 10), Int32.MinValue + (Int32)((UInt32.MaxValue / 10) * 3), Int32.MinValue + (Int32)((UInt32.MaxValue / 10) * 3));
+            }
+            else
+            {
+                LaserProjectorBridge.PatternBuilder.CreatePlusFullRange(ref vectorImageBuilder);
+                LaserProjectorBridge.PatternBuilder.CreateCrossFullRange(ref vectorImageBuilder);
 
-            LaserProjectorBridge.PatternBuilder.CreatePlusFullRange(ref vectorImageBuilder);
-            LaserProjectorBridge.PatternBuilder.CreateCrossFullRange(ref vectorImageBuilder);
+                for (double scale = 0.0; scale <= 1.0; scale += 0.1)
+                    LaserProjectorBridge.PatternBuilder.CreateSquareScaled(ref vectorImageBuilder, scale);
 
-            for (double scale = 0.0; scale <= 1.0; scale += 0.1)
-                LaserProjectorBridge.PatternBuilder.CreateSquareScaled(ref vectorImageBuilder, scale);
-
-            LaserProjectorBridge.PatternBuilder.CreateHorizontalDiamondOutsideDrawingArea(ref vectorImageBuilder);
-            LaserProjectorBridge.PatternBuilder.CreateVerticalDiamondOutsideDrawingArea(ref vectorImageBuilder);
-            LaserProjectorBridge.PatternBuilder.CreateCrossOutsideDrawingArea(ref vectorImageBuilder);
-            LaserProjectorBridge.PatternBuilder.CreatePlusOutsideDrawingArea(ref vectorImageBuilder);
+                LaserProjectorBridge.PatternBuilder.CreateHorizontalDiamondOutsideDrawingArea(ref vectorImageBuilder);
+                LaserProjectorBridge.PatternBuilder.CreateVerticalDiamondOutsideDrawingArea(ref vectorImageBuilder);
+                LaserProjectorBridge.PatternBuilder.CreateCrossOutsideDrawingArea(ref vectorImageBuilder);
+                LaserProjectorBridge.PatternBuilder.CreatePlusOutsideDrawingArea(ref vectorImageBuilder);
+            }
 
             vectorImageBuilder.FinishVectorImage();
         }

@@ -19,6 +19,9 @@ namespace LaserProjectorBridge
         public double DrawingAreaHeight { get; set; } = 2000.0;
         public double DrawingAreaXOffset { get; set; } = 0.0;
         public double DrawingAreaYOffset { get; set; } = 0.0;
+        public double DrawingAreaXFocalLengthInPixels { get; set; } = 2753.0;
+        public double DrawingAreaYFocalLengthInPixels { get; set; } = 2753.0;
+        public double DistanceBetweenMirrorsInProjectorRangePercentage { get; set; } = 0.01;
         public double RadialDistortionCoefficientScalingX { get; set; } = 0.084;
         public double RadialDistortionCoefficientFirstDegree { get; set; } = -0.073;
         public double RadialDistortionCoefficientSecondDegree { get; set; } = -0.013;
@@ -651,7 +654,7 @@ namespace LaserProjectorBridge
                 VectorImagePoints.RemoveAt(VectorImagePoints.Count - 1);
         }
 
-        public void CorrectRadialDistortion(ref NativeMethods.JMLaser.JMVectorStruct point)
+        public void CorrectRadialDistortionX(ref NativeMethods.JMLaser.JMVectorStruct point)
         {
             double u = Math.Abs((double)point.x) / (double)System.Int32.MaxValue;
             double v = Math.Abs((double)point.y) / (double)System.Int32.MaxValue;
@@ -669,12 +672,44 @@ namespace LaserProjectorBridge
 
         public void CorrectRadialDistortionOnVectorImage()
         {
+            double distanceToXImagePlane = ComputeDistanceToImagePlane(DrawingAreaXFocalLengthInPixels, DrawingAreaWidth, (double)UInt32.MaxValue);
+            double distanceToYImagePlane = ComputeDistanceToImagePlane(DrawingAreaYFocalLengthInPixels, DrawingAreaHeight, (double)UInt32.MaxValue);
             for (int i = 0; i < VectorImagePoints.Count; ++i)
             {
                 NativeMethods.JMLaser.JMVectorStruct point = VectorImagePoints[i];
-                CorrectRadialDistortion(ref point);
+                CorrectRadialDistortion(ref point, distanceToXImagePlane, distanceToYImagePlane, DistanceBetweenMirrorsInProjectorRangePercentage * (double)UInt32.MaxValue);
                 VectorImagePoints[i] = point;
             }
+        }
+
+        public static void CorrectRadialDistortion(ref NativeMethods.JMLaser.JMVectorStruct point, double distanceToXImagePlane, double distanceToYImagePlane, double distanceBetweenMirrors)
+        {
+            double yDenominator = distanceBetweenMirrors - distanceToYImagePlane;
+            double galvoYAngle = Math.Atan((double)point.y / yDenominator);
+            double xDenominator = distanceBetweenMirrors * (((distanceToXImagePlane - distanceBetweenMirrors) / (distanceBetweenMirrors * Math.Cos(galvoYAngle))) + 1);
+            double galvoXAngle = Math.Atan((double)point.x / xDenominator);
+            double newY = (Math.Tan(galvoYAngle) * distanceToYImagePlane);
+            double newX = (Math.Tan(galvoXAngle) * distanceToXImagePlane);
+
+            if (newX < Int32.MinValue)
+                point.x = Int32.MinValue;
+            else if (newX > Int32.MaxValue)
+                point.x = Int32.MaxValue;
+            else
+                point.x = (Int32)newX;
+
+            if (newY < Int32.MinValue)
+                point.y = Int32.MinValue;
+            else if (newY > Int32.MaxValue)
+                point.y = Int32.MaxValue;
+            else
+                point.y = (Int32)newY;
+        }
+
+        public static double ComputeDistanceToImagePlane(double focalLengthInPixels, double imageSizeInPixels, double projectorRange)
+        {
+            double fov = Math.Atan(imageSizeInPixels / focalLengthInPixels / 2.0) * 2.0;
+            return (projectorRange / 2.0 / Math.Tan(fov / 2));
         }
 
         public static bool LineIntersection(double p0X, double p0Y, double p1X, double p1Y,
