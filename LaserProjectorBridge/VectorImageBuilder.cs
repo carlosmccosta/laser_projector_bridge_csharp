@@ -22,6 +22,8 @@ namespace LaserProjectorBridge
         public double DrawingAreaXFocalLengthInPixels { get; set; } = 2753.0;
         public double DrawingAreaYFocalLengthInPixels { get; set; } = 2753.0;
         public double DistanceBetweenMirrorsInProjectorRangePercentage { get; set; } = 0.01;
+        public Int32 MinimumProjectorRangeValueForClipping { get; set; } = (Int32)(Int32.MinValue * 0.98);
+        public Int32 MaximumProjectorRangeValueForClipping { get; set; } = (Int32)(Int32.MaxValue * 0.98);
         public double RadialDistortionCoefficientScalingX { get; set; } = 0.084;
         public double RadialDistortionCoefficientFirstDegree { get; set; } = -0.073;
         public double RadialDistortionCoefficientSecondDegree { get; set; } = -0.013;
@@ -167,7 +169,7 @@ namespace LaserProjectorBridge
             }
             catch (System.OverflowException)
             {
-                xPointInProjectorRange = xPointInDrawingAreaAndProjectorOrigin - DrawingAreaXOffset < DrawingAreaWidth * 0.5 ? Int32.MinValue : Int32.MaxValue;
+                xPointInProjectorRange = xPointInDrawingAreaAndProjectorOrigin - DrawingAreaXOffset < DrawingAreaWidth * 0.5 ? MinimumProjectorRangeValueForClipping : MaximumProjectorRangeValueForClipping;
                 pointOverflow = true;
             }
 
@@ -177,7 +179,7 @@ namespace LaserProjectorBridge
             }
             catch (System.OverflowException)
             {
-                yPointInProjectorRange = yPointInDrawingAreaAndProjectorOrigin - DrawingAreaYOffset < DrawingAreaHeight * 0.5 ? Int32.MinValue : Int32.MaxValue;
+                yPointInProjectorRange = yPointInDrawingAreaAndProjectorOrigin - DrawingAreaYOffset < DrawingAreaHeight * 0.5 ? MinimumProjectorRangeValueForClipping : MaximumProjectorRangeValueForClipping;
                 pointOverflow = true;
             }
 
@@ -682,8 +684,18 @@ namespace LaserProjectorBridge
             }
         }
 
-        public static void CorrectRadialDistortion(ref NativeMethods.JMLaser.JMVectorStruct point, double distanceToXImagePlane, double distanceToYImagePlane, double distanceBetweenMirrors)
+        public void CorrectRadialDistortion(ref NativeMethods.JMLaser.JMVectorStruct point, double distanceToXImagePlane, double distanceToYImagePlane, double distanceBetweenMirrors)
         {
+            if (point.x <= MinimumProjectorRangeValueForClipping)
+                point.x = MinimumProjectorRangeValueForClipping;
+            else if (point.x >= MaximumProjectorRangeValueForClipping)
+                point.x = MaximumProjectorRangeValueForClipping;
+
+            if (point.y <= MinimumProjectorRangeValueForClipping)
+                point.y = MinimumProjectorRangeValueForClipping;
+            else if (point.y >= MaximumProjectorRangeValueForClipping)
+                point.y = MaximumProjectorRangeValueForClipping;
+
             double yDenominator = distanceBetweenMirrors - distanceToYImagePlane;
             double galvoYAngle = Math.Atan((double)point.y / yDenominator);
             double xDenominator = distanceBetweenMirrors * (((distanceToXImagePlane - distanceBetweenMirrors) / (distanceBetweenMirrors * Math.Cos(galvoYAngle))) + 1);
@@ -691,19 +703,8 @@ namespace LaserProjectorBridge
             double newY = (Math.Tan(galvoYAngle) * distanceToYImagePlane);
             double newX = (Math.Tan(galvoXAngle) * distanceToXImagePlane);
 
-            if (newX < Int32.MinValue)
-                point.x = Int32.MinValue;
-            else if (newX > Int32.MaxValue)
-                point.x = Int32.MaxValue;
-            else
-                point.x = (Int32)newX;
-
-            if (newY < Int32.MinValue)
-                point.y = Int32.MinValue;
-            else if (newY > Int32.MaxValue)
-                point.y = Int32.MaxValue;
-            else
-                point.y = (Int32)newY;
+            point.x = (Int32)newX;
+            point.y = (Int32)newY;
         }
 
         public static double ComputeDistanceToImagePlane(double focalLengthInPixels, double imageSizeInPixels, double projectorRange)
