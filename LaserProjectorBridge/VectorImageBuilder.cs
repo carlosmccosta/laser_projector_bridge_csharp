@@ -700,7 +700,7 @@ namespace LaserProjectorBridge
             double galvoYAngle = Math.Atan((double)point.y / yDenominator);
             double xDenominator = distanceBetweenMirrors * (((distanceToXImagePlane - distanceBetweenMirrors) / (distanceBetweenMirrors * Math.Cos(galvoYAngle))) + 1);
             double galvoXAngle = Math.Atan((double)point.x / xDenominator);
-            double newY = (Math.Tan(galvoYAngle) * distanceToYImagePlane);
+            double newY = -(Math.Tan(galvoYAngle) * distanceToYImagePlane);
             double newX = (Math.Tan(galvoXAngle) * distanceToXImagePlane);
 
             point.x = (Int32)newX;
