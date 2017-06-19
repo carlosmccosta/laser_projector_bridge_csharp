@@ -24,13 +24,6 @@ namespace LaserProjectorBridge
         public double DistanceBetweenMirrorsInProjectorRangePercentage { get; set; } = 0.01;
         public Int32 MinimumProjectorRangeValueForClipping { get; set; } = (Int32)(Int32.MinValue * 0.98);
         public Int32 MaximumProjectorRangeValueForClipping { get; set; } = (Int32)(Int32.MaxValue * 0.98);
-        public double RadialDistortionCoefficientScalingX { get; set; } = 0.084;
-        public double RadialDistortionCoefficientFirstDegree { get; set; } = -0.073;
-        public double RadialDistortionCoefficientSecondDegree { get; set; } = -0.013;
-        public double RadialDistortionCoefficientThirdDegree { get; set; } = -0.005;
-        public double RadialDistortionCoefficientFourthDegree { get; set; } = 0.0;
-        public double RadialDistortionCoefficientFifthDegree { get; set; } = 0.0;
-        public double RadialDistortionCoefficientSixthDegree { get; set; } = 0.0;
         public double LineFirstPointMergeDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.0005, 2);
         public double LineFirstPointIgnoreDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.001, 2);
         public Int64 InterpolationDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.002);
@@ -654,22 +647,6 @@ namespace LaserProjectorBridge
         {
             if (VectorImagePoints.Count > 0)
                 VectorImagePoints.RemoveAt(VectorImagePoints.Count - 1);
-        }
-
-        public void CorrectRadialDistortionX(ref NativeMethods.JMLaser.JMVectorStruct point)
-        {
-            double u = Math.Abs((double)point.x) / (double)System.Int32.MaxValue;
-            double v = Math.Abs((double)point.y) / (double)System.Int32.MaxValue;
-            double r = Math.Sqrt(System.Math.Pow(u, 2.0) + System.Math.Pow(v, 2.0));
-            double warp =
-                RadialDistortionCoefficientScalingX +
-                RadialDistortionCoefficientFirstDegree  * r +
-                RadialDistortionCoefficientSecondDegree * Math.Pow(r, 2.0) +
-                RadialDistortionCoefficientThirdDegree  * Math.Pow(r, 3.0) +
-                RadialDistortionCoefficientFourthDegree * Math.Pow(r, 4.0) +
-                RadialDistortionCoefficientFifthDegree  * Math.Pow(r, 5.0) +
-                RadialDistortionCoefficientSixthDegree  * Math.Pow(r, 6.0);
-            point.x = (int)((1.0 + warp) * (double)point.x);
         }
 
         public void CorrectRadialDistortionOnVectorImage()

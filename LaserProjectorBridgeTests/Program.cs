@@ -94,13 +94,6 @@ namespace LaserProjectorBridgeTests
             vectorImageBuilder.DrawingAreaXFocalLengthInPixels = 2753.0;
             vectorImageBuilder.DrawingAreaYFocalLengthInPixels = 2753.0;
             vectorImageBuilder.DistanceBetweenMirrorsInProjectorRangePercentage = 0.01;
-            vectorImageBuilder.RadialDistortionCoefficientScalingX     = 0.084;
-            vectorImageBuilder.RadialDistortionCoefficientFirstDegree  = -0.073;
-            vectorImageBuilder.RadialDistortionCoefficientSecondDegree = -0.013;
-            vectorImageBuilder.RadialDistortionCoefficientThirdDegree  = -0.005;
-            vectorImageBuilder.RadialDistortionCoefficientFourthDegree = 0.0;
-            vectorImageBuilder.RadialDistortionCoefficientFifthDegree  = 0.0;
-            vectorImageBuilder.RadialDistortionCoefficientSixthDegree  = 0.0;
             vectorImageBuilder.StartNewVectorImage();
             vectorImageBuilder.VectorImagePoints = points;
 
