@@ -1,5 +1,5 @@
 # laser_projector_bridge_csharp
-C# library for communicating with Ethernet laser projectors (such as [MediaLas ILP 622 LAN](http://www.medialas-industrial.de/ilp622-laserprojektor.html?&L=1) using the jmlaser.dll).
+C# library for communicating with Ethernet laser projectors (such as MediaLas ILP 622 LAN).
 
 NuGet package available [here](https://www.nuget.org/packages/LaserProjectorBridge).
 
