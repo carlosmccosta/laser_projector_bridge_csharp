@@ -680,8 +680,16 @@ namespace LaserProjectorBridge
             double newY = -(Math.Tan(galvoYAngle) * distanceToYImagePlane);
             double newX = (Math.Tan(galvoXAngle) * distanceToXImagePlane);
 
-            point.x = (Int32)newX;
-            point.y = (Int32)newY;
+            bool underflowX = (point.x < 0 && newX > 0);
+            bool underflowY = (point.y < 0 && newY > 0);
+            bool overflowX = (point.x > 0 && newX < 0);
+            bool overflowY = (point.y > 0 && newY < 0);
+
+            if (!((underflowX || overflowX) && Math.Abs(point.x) > (double)Int32.MaxValue * 0.5))
+                point.x = (Int32)newX;
+
+            if (!((underflowY || overflowY) && Math.Abs(point.y) > (double)Int32.MaxValue * 0.5))
+                point.y = (Int32)newY;
         }
 
         public static double ComputeDistanceToImagePlane(double focalLengthInPixels, double imageSizeInPixels, double projectorRange)
