@@ -91,9 +91,9 @@ namespace LaserProjectorBridgeTests
             vectorImageBuilder.LineFirstPointIgnoreDistanceSquaredInProjectorRange = -Math.Pow(UInt32.MaxValue * 0.0013, 2);
             vectorImageBuilder.LineFirstPointMergeDistanceSquaredInProjectorRange = -Math.Pow(UInt32.MaxValue * 0.0005, 2);
             vectorImageBuilder.NumberOfBlankingPointsForLineStartAndEnd = 2;
-            vectorImageBuilder.DrawingAreaXFocalLengthInPixels = 2753.0;
-            vectorImageBuilder.DrawingAreaYFocalLengthInPixels = 2753.0;
-            vectorImageBuilder.DistanceBetweenMirrorsInProjectorRangePercentage = 0.01;
+            vectorImageBuilder.ProjectionModelProperties.FocalLengthXInPixels = 2753.0;
+            vectorImageBuilder.ProjectionModelProperties.FocalLengthYInPixels = 2753.0;
+            vectorImageBuilder.ProjectionModelProperties.DistanceBetweenMirrorsInProjectorRangePercentage = 0.01;
             vectorImageBuilder.StartNewVectorImage();
             vectorImageBuilder.VectorImagePoints = points;
 

@@ -33,6 +33,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ProjectionModelProperties.cs" />
     <Compile Include="JMLaser.cs" />
     <Compile Include="JMLaserProjector.cs" />
     <Compile Include="PatternBuilder.cs" />

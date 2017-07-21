@@ -71,12 +71,12 @@ namespace LaserProjectorBridge
 
         public static void CreateSquareScaled(ref LaserProjectorBridge.VectorImageBuilder vectorImageBuilder, double scale = 1.0)
         {
-            double xOffset = (vectorImageBuilder.DrawingAreaWidth - (vectorImageBuilder.DrawingAreaWidth * scale)) * 0.5;
-            double yOffset = (vectorImageBuilder.DrawingAreaHeight - (vectorImageBuilder.DrawingAreaHeight * scale)) * 0.5;
+            double xOffset = (vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels - (vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * scale)) * 0.5;
+            double yOffset = (vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels - (vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * scale)) * 0.5;
             double xMin = xOffset;
-            double xMax = vectorImageBuilder.DrawingAreaWidth - xOffset;
+            double xMax = vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels - xOffset;
             double yMin = yOffset;
-            double yMax = vectorImageBuilder.DrawingAreaHeight - yOffset;
+            double yMax = vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels - yOffset;
             vectorImageBuilder.AddNewLine(xMin, yMin, xMax, yMin);
             vectorImageBuilder.AddNewLine(xMax, yMin, xMax, yMax);
             vectorImageBuilder.AddNewLine(xMax, yMax, xMin, yMax);
@@ -98,10 +98,10 @@ namespace LaserProjectorBridge
 
         public static void CreatePlusFullRange(ref LaserProjectorBridge.VectorImageBuilder vectorImageBuilder)
         {
-            double halfWidth = vectorImageBuilder.DrawingAreaWidth * 0.5;
-            double halfHeight = vectorImageBuilder.DrawingAreaHeight * 0.5;
-            vectorImageBuilder.AddNewLine(0.0, halfHeight, vectorImageBuilder.DrawingAreaWidth, halfHeight);
-            vectorImageBuilder.AddNewLine(halfWidth, 0.0, halfWidth, vectorImageBuilder.DrawingAreaHeight);
+            double halfWidth = vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.5;
+            double halfHeight = vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.5;
+            vectorImageBuilder.AddNewLine(0.0, halfHeight, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels, halfHeight);
+            vectorImageBuilder.AddNewLine(halfWidth, 0.0, halfWidth, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels);
         }
 
 
@@ -148,54 +148,54 @@ namespace LaserProjectorBridge
 
         public static void CreateHorizontalDiamondOutsideDrawingArea(ref LaserProjectorBridge.VectorImageBuilder vectorImageBuilder)
         {
-            double halfWidth = vectorImageBuilder.DrawingAreaWidth * 0.5;
-            double halfHeight = vectorImageBuilder.DrawingAreaHeight * 0.5;
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, halfHeight, halfWidth, vectorImageBuilder.DrawingAreaHeight * 0.75);
-            vectorImageBuilder.AddNewLine(halfWidth, vectorImageBuilder.DrawingAreaHeight * 0.75, vectorImageBuilder.DrawingAreaWidth * 1.25, halfHeight);
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 1.25, halfHeight, halfWidth, vectorImageBuilder.DrawingAreaHeight * 0.25);
-            vectorImageBuilder.AddNewLine(halfWidth, vectorImageBuilder.DrawingAreaHeight * 0.25, vectorImageBuilder.DrawingAreaWidth * -0.25, halfHeight);
+            double halfWidth = vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.5;
+            double halfHeight = vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.5;
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * -0.25, halfHeight, halfWidth, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.75);
+            vectorImageBuilder.AddNewLine(halfWidth, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.75, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 1.25, halfHeight);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 1.25, halfHeight, halfWidth, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.25);
+            vectorImageBuilder.AddNewLine(halfWidth, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.25, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * -0.25, halfHeight);
         }
 
 
         public static void CreateVerticalDiamondOutsideDrawingArea(ref LaserProjectorBridge.VectorImageBuilder vectorImageBuilder)
         {
-            double halfWidth = vectorImageBuilder.DrawingAreaWidth * 0.5;
-            double halfHeight = vectorImageBuilder.DrawingAreaHeight * 0.5;
-            vectorImageBuilder.AddNewLine(halfHeight, vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * 0.75, halfWidth);
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaHeight * 0.75, halfWidth, halfHeight, vectorImageBuilder.DrawingAreaWidth * 1.25);
-            vectorImageBuilder.AddNewLine(halfHeight, vectorImageBuilder.DrawingAreaWidth * 1.25, vectorImageBuilder.DrawingAreaHeight * 0.25, halfWidth);
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaHeight * 0.25, halfWidth, halfHeight, vectorImageBuilder.DrawingAreaWidth * -0.25);
+            double halfWidth = vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.5;
+            double halfHeight = vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.5;
+            vectorImageBuilder.AddNewLine(halfHeight, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * -0.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.75, halfWidth);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.75, halfWidth, halfHeight, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 1.25);
+            vectorImageBuilder.AddNewLine(halfHeight, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 1.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.25, halfWidth);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.25, halfWidth, halfHeight, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * -0.25);
         }
 
 
         public static void CreateCrossOutsideDrawingArea(ref LaserProjectorBridge.VectorImageBuilder vectorImageBuilder)
         {
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * -0.25, vectorImageBuilder.DrawingAreaWidth * 0.25, vectorImageBuilder.DrawingAreaHeight * 0.25);
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * -0.25, vectorImageBuilder.DrawingAreaWidth * 0.15, vectorImageBuilder.DrawingAreaHeight * 0.25);
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * -0.25, vectorImageBuilder.DrawingAreaWidth * 0.35, vectorImageBuilder.DrawingAreaHeight * 0.25);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * -0.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * -0.25, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.25);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * -0.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * -0.25, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.15, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.25);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * -0.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * -0.25, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.35, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.25);
 
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * 1.25, vectorImageBuilder.DrawingAreaWidth * 0.25, vectorImageBuilder.DrawingAreaHeight * 0.75);
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * 1.25, vectorImageBuilder.DrawingAreaWidth * 0.15, vectorImageBuilder.DrawingAreaHeight * 0.75);
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, vectorImageBuilder.DrawingAreaHeight * 1.25, vectorImageBuilder.DrawingAreaWidth * 0.35, vectorImageBuilder.DrawingAreaHeight * 0.75);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * -0.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 1.25, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.75);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * -0.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 1.25, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.15, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.75);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * -0.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 1.25, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.35, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.75);
 
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 1.25, vectorImageBuilder.DrawingAreaHeight * -0.25, vectorImageBuilder.DrawingAreaWidth * 0.75, vectorImageBuilder.DrawingAreaHeight * 0.25);
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 1.25, vectorImageBuilder.DrawingAreaHeight * -0.25, vectorImageBuilder.DrawingAreaWidth * 0.65, vectorImageBuilder.DrawingAreaHeight * 0.25);
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 1.25, vectorImageBuilder.DrawingAreaHeight * -0.25, vectorImageBuilder.DrawingAreaWidth * 0.85, vectorImageBuilder.DrawingAreaHeight * 0.25);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 1.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * -0.25, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.75, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.25);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 1.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * -0.25, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.65, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.25);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 1.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * -0.25, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.85, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.25);
 
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 1.25, vectorImageBuilder.DrawingAreaHeight * 1.25, vectorImageBuilder.DrawingAreaWidth * 0.75, vectorImageBuilder.DrawingAreaHeight * 0.75);
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 1.25, vectorImageBuilder.DrawingAreaHeight * 1.25, vectorImageBuilder.DrawingAreaWidth * 0.65, vectorImageBuilder.DrawingAreaHeight * 0.75);
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 1.25, vectorImageBuilder.DrawingAreaHeight * 1.25, vectorImageBuilder.DrawingAreaWidth * 0.85, vectorImageBuilder.DrawingAreaHeight * 0.75);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 1.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 1.25, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.75, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.75);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 1.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 1.25, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.65, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.75);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 1.25, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 1.25, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.85, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.75);
         }
 
 
         public static void CreatePlusOutsideDrawingArea(ref LaserProjectorBridge.VectorImageBuilder vectorImageBuilder)
         {
-            double halfWidth = vectorImageBuilder.DrawingAreaWidth * 0.5;
-            double halfHeight = vectorImageBuilder.DrawingAreaHeight * 0.5;
-            vectorImageBuilder.AddNewLine(halfWidth * 0.5, vectorImageBuilder.DrawingAreaHeight * 0.25, halfWidth * 0.5, vectorImageBuilder.DrawingAreaHeight * 1.25);
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * 0.25, halfHeight * 0.5, vectorImageBuilder.DrawingAreaWidth * 1.25, halfHeight * 0.5);
-            vectorImageBuilder.AddNewLine(halfWidth * 1.5, vectorImageBuilder.DrawingAreaHeight * -0.25, halfWidth * 1.5, vectorImageBuilder.DrawingAreaHeight * 0.75);
-            vectorImageBuilder.AddNewLine(vectorImageBuilder.DrawingAreaWidth * -0.25, halfHeight * 1.5, vectorImageBuilder.DrawingAreaWidth * 0.75, halfHeight * 1.5);
+            double halfWidth = vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.5;
+            double halfHeight = vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.5;
+            vectorImageBuilder.AddNewLine(halfWidth * 0.5, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.25, halfWidth * 0.5, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 1.25);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.25, halfHeight * 0.5, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 1.25, halfHeight * 0.5);
+            vectorImageBuilder.AddNewLine(halfWidth * 1.5, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * -0.25, halfWidth * 1.5, vectorImageBuilder.ProjectionModelProperties.ImageHeightInPixels * 0.75);
+            vectorImageBuilder.AddNewLine(vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * -0.25, halfHeight * 1.5, vectorImageBuilder.ProjectionModelProperties.ImageWidthInPixels * 0.75, halfHeight * 1.5);
         }
     }
 }
