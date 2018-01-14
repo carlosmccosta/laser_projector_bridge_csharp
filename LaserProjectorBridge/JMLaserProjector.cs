@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace LaserProjectorBridge
 {
-    public class JMLaserProjector
+    public class JMLaserProjector : IDisposable
     {
         // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   <fields>   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         #region fields
@@ -21,6 +22,8 @@ namespace LaserProjectorBridge
         public string ProjectorFriendlyName { get; set; }
         public string ProjectorFamilyName { get; set; }
         public bool ProjectorOutputStarted { get; set; }
+
+        private static readonly Lazy<JMLaserProjector> SingletonLazyJMLaserProjector = new Lazy<JMLaserProjector>(() => new JMLaserProjector());
         #endregion
         // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>   </fields>   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -39,9 +42,27 @@ namespace LaserProjectorBridge
             jmLaserBridgeEnumerateDevices();
         }
 
-        ~JMLaserProjector()
+        public static JMLaserProjector Instance => SingletonLazyJMLaserProjector.Value;
+
+        private void ReleaseUnmanagedResources()
         {
             ResetProjector();
+        }
+
+        ~JMLaserProjector()
+        {
+            Dispose(false);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            ReleaseUnmanagedResources();
         }
 
 

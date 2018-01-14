@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace LaserProjectorBridgeTests
 {
@@ -24,7 +25,10 @@ namespace LaserProjectorBridgeTests
             }
             else
             {
-                //TestJMLaserProjectorSetup(number_of_projectors);
+                TestJMLaserProjectorSetup(1);
+                TestMultipleInstances();
+                TestSingleton();
+                TestSingletonMultiThread();
                 TestJMLaserOutput(numberOfProjectors);
             }
 
@@ -40,6 +44,59 @@ namespace LaserProjectorBridgeTests
             Console.WriteLine("Projector name: " + projectorName);
         }
 
+
+        public static void TestMultipleInstances()
+        {
+            using (LaserProjectorBridge.JMLaserProjector laserProjector1 = new LaserProjectorBridge.JMLaserProjector())
+            {
+                bool status1 = laserProjector1.SetupProjector();
+            }
+
+            LaserProjectorBridge.JMLaserProjector laserProjector2 = new LaserProjectorBridge.JMLaserProjector();
+            bool status2 = laserProjector2.SetupProjector();
+            laserProjector2.Dispose();
+
+            LaserProjectorBridge.JMLaserProjector laserProjector3 = new LaserProjectorBridge.JMLaserProjector();
+            bool status3 = laserProjector3.SetupProjector();
+            laserProjector3.Dispose();
+        }
+
+        public static void TestSingleton()
+        {
+            LaserProjectorBridge.JMLaserProjector laserProjector1 = LaserProjectorBridge.JMLaserProjector.Instance;
+            LaserProjectorBridge.JMLaserProjector laserProjector2 = LaserProjectorBridge.JMLaserProjector.Instance;
+            if (Object.ReferenceEquals(laserProjector1, laserProjector2))
+            {
+                Console.WriteLine(">>> Singleton test passed");
+            }
+        }
+
+        public static void TestSingletonMultiThread()
+        {
+            Thread t1 = new Thread(() =>
+            {
+                LaserProjectorBridge.JMLaserProjector laserProjector1 = LaserProjectorBridge.JMLaserProjector.Instance;
+                if (laserProjector1.SetupProjector())
+                {
+                    Console.WriteLine(">>> Thread 1 setup projector successfully");
+                }
+            });
+
+            Thread t2 = new Thread(() =>
+            {
+                LaserProjectorBridge.JMLaserProjector laserProjector2 = LaserProjectorBridge.JMLaserProjector.Instance;
+                if (laserProjector2.SetupProjector())
+                {
+                    Console.WriteLine(">>> Thread 2 setup projector successfully");
+                }
+            });
+
+            t1.Start();
+            t1.Join();
+            t2.Start();
+            t2.Join();
+            LaserProjectorBridge.JMLaserProjector.Instance.Dispose();
+        }
 
         public static void TestJMLaserProjectorSetup(int numberOfProjectors)
         {
@@ -67,6 +124,8 @@ namespace LaserProjectorBridgeTests
                 Console.WriteLine(">>> |setupProjectorUsingFriendlyName(string(\"ILP 622 LAN\"))");
                 laserProjector.SetupProjectorUsingFriendlyName("ILP 622 LAN");
                 Console.WriteLine(laserProjector + "\n\n");
+
+                laserProjector.Dispose();
             }
         }
 
@@ -131,20 +190,23 @@ namespace LaserProjectorBridgeTests
             {
                 LaserProjectorBridge.JMLaserProjector laserProjector = new LaserProjectorBridge.JMLaserProjector();
                 Console.WriteLine(">>> |setupProjectorUsingIndex(" + i + ")");
-                laserProjector.SetupProjectorUsingIndex((uint)i);
-                Console.WriteLine(laserProjector + "\n\n");
-                laserProjector.StartOutput();
-                Console.WriteLine(">>> Sending pattern to projector " + i);
-                if (laserProjector.SendVectorImageToProjector(ref points, 6000, 0))
+                if (laserProjector.SetupProjectorUsingIndex((uint) i))
                 {
-                    Console.WriteLine(">>> - Pattern was sent successfully");
+                    Console.WriteLine(laserProjector + "\n\n");
+                    laserProjector.StartOutput();
+                    Console.WriteLine(">>> Sending pattern to projector " + i);
+                    if (laserProjector.SendVectorImageToProjector(ref points, 6000, 0))
+                    {
+                        Console.WriteLine(">>> - Pattern was sent successfully");
+                    }
+                    else
+                    {
+                        Console.WriteLine(">>> - Failed to send pattern");
+                    }
+                    Console.WriteLine(">>> - Press ENTER to continue...");
+                    Console.ReadLine();
+                    laserProjector.StopOutput();
                 }
-                else {
-                    Console.WriteLine(">>> - Failed to send pattern");
-                }
-                Console.WriteLine(">>> - Press ENTER to continue...");
-                Console.ReadLine();
-                laserProjector.StopOutput();
             }
         }
     }
