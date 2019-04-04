@@ -732,7 +732,7 @@ namespace LaserProjectorBridge
 
         public static double ComputeDistanceToImagePlane(double focalLengthInPixels, double imageSizeInPixels, double projectorRange)
         {
-            double fov = Math.Atan(imageSizeInPixels / focalLengthInPixels / 2.0) * 2.0;
+            double fov = Math.Atan(imageSizeInPixels / (focalLengthInPixels * 2.0)) * 2.0;
             return (projectorRange / 2.0 / Math.Tan(fov / 2));
         }
 
