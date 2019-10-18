@@ -24,7 +24,7 @@ namespace LaserProjectorBridge
         public double LineFirstPointIgnoreDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.001, 2);
         public Int64 InterpolationDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.002);
         public Int32 NumberOfBlankingPointsForLineStartAndEnd { get; set; } = 2;
-        public Int32 MaximmNumberOfPoints { get; set; } = 16000;
+        public Int32 MaximumNumberOfPoints { get; set; } = 16000;
         //public Int32 BlankingDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.001);
         //public int NumberOfPointRepetitionsOnLineMiddlePoints { get; set; } = 1;
         //public int NumberOfPointRepetitionsOnLineStartPoint { get; set; } = 1;
@@ -62,7 +62,7 @@ namespace LaserProjectorBridge
 
         public void AddReverseImage()
         {
-            if (VectorImagePoints.Count * 2 <= MaximmNumberOfPoints)
+            if (VectorImagePoints.Count * 2 <= MaximumNumberOfPoints)
             {
                 for (int i = VectorImagePoints.Count - 1; i >= 0; --i)
                 {
@@ -468,18 +468,35 @@ namespace LaserProjectorBridge
 
         public bool AddNewLine(ref NativeMethods.JMLaser.JMVectorStruct startPoint, ref NativeMethods.JMLaser.JMVectorStruct endPoint)
         {
-            if (VectorImagePoints.Count + 2 > MaximmNumberOfPoints)
+            if (VectorImagePoints.Count + 2 > MaximumNumberOfPoints)
                 return false;
 
             if (VectorImagePoints.Count > 0)
             {
                 NativeMethods.JMLaser.JMVectorStruct lastPoint = VectorImagePoints.Last();
                 double distanceToLastPointSquared = NativeMethods.JMLaser.JMVectorStructDistanceSquared(startPoint, lastPoint);
-                if (distanceToLastPointSquared >= LineFirstPointIgnoreDistanceSquaredInProjectorRange ||
-                    lastPoint.i != startPoint.i || lastPoint.r != startPoint.r || lastPoint.g != startPoint.g ||
-                    lastPoint.b != startPoint.b ||
-                    lastPoint.cyan != startPoint.cyan || lastPoint.deepblue != startPoint.deepblue ||
-                    lastPoint.yellow != startPoint.yellow || lastPoint.user4 != startPoint.user4)
+                bool startPointDifferentThanLastPoint = false;
+
+                // check if points are the same using the ignore distance as threshold
+                if (LineFirstPointIgnoreDistanceSquaredInProjectorRange > 0 && distanceToLastPointSquared >= LineFirstPointIgnoreDistanceSquaredInProjectorRange)
+                {
+                    startPointDifferentThanLastPoint = true;
+                }
+                else
+                // check if points are the same using their coordinates (when ignore distance threshold is not active)
+                if (LineFirstPointIgnoreDistanceSquaredInProjectorRange < 0 && (lastPoint.x != startPoint.x || lastPoint.y != startPoint.y))
+                {
+                    startPointDifferentThanLastPoint = true;
+                }
+                else
+                // check if colors are different when points are considered the same
+                if (lastPoint.i != startPoint.i || lastPoint.r != startPoint.r || lastPoint.g != startPoint.g || lastPoint.b != startPoint.b ||
+                    lastPoint.cyan != startPoint.cyan || lastPoint.deepblue != startPoint.deepblue || lastPoint.yellow != startPoint.yellow || lastPoint.user4 != startPoint.user4)
+                {
+                    startPointDifferentThanLastPoint = true;
+                }
+
+                if (startPointDifferentThanLastPoint)
                 {
                     if (lastPoint.i != 0)
                     {
@@ -489,20 +506,20 @@ namespace LaserProjectorBridge
 
                     NativeMethods.JMLaser.JMVectorStruct lastPointOff = VectorImagePoints.Last();
                     lastPointOff.i = 0;
-                    for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd; ++i)
+                    for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd - 1; ++i)
                         AddNewPoint(ref lastPointOff);
 
                     NativeMethods.JMLaser.JMVectorStruct startPointOff = startPoint;
                     startPointOff.i = 0;
                     AddNewPoint(ref startPointOff);
-                    for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd; ++i)
+                    for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd - 1; ++i)
                         AddNewPoint(ref startPointOff);
 
                     AddNewPoint(ref startPoint);
                 }
                 else
                 {
-                    if (distanceToLastPointSquared > 0 && distanceToLastPointSquared < LineFirstPointMergeDistanceSquaredInProjectorRange)
+                    if (distanceToLastPointSquared > 0 && LineFirstPointMergeDistanceSquaredInProjectorRange > 0 && distanceToLastPointSquared < LineFirstPointMergeDistanceSquaredInProjectorRange)
                     {
                         lastPoint.x = (Int32)((lastPoint.x + startPoint.x) / 2.0);
                         lastPoint.y = (Int32)((lastPoint.y + startPoint.y) / 2.0);
@@ -525,7 +542,7 @@ namespace LaserProjectorBridge
                 NativeMethods.JMLaser.JMVectorStruct startPointOff = startPoint;
                 startPointOff.i = 0;
                 AddNewPoint(ref startPointOff);
-                for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd; ++i)
+                for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd - 1; ++i)
                     AddNewPoint(ref startPointOff);
 
                 AddNewPoint(ref startPoint);
@@ -564,9 +581,9 @@ namespace LaserProjectorBridge
 
         public bool AddNewPoint(ref NativeMethods.JMLaser.JMVectorStruct point)
         {
-            if (VectorImagePoints.Count < MaximmNumberOfPoints)
+            if (VectorImagePoints.Count < MaximumNumberOfPoints)
             {
-                if (VectorImagePoints.Count == 0)
+                if (VectorImagePoints.Count == 0 && point.i > 0)
                 {
                     NativeMethods.JMLaser.JMVectorStruct pointStartOff = point;
                     pointStartOff.i = 0;
@@ -587,9 +604,9 @@ namespace LaserProjectorBridge
                 double distanceToLastPoint = Math.Sqrt(NativeMethods.JMLaser.JMVectorStructDistanceSquared(lastPoint, point));
                 int numberOfInterpolationPoints = (int)(distanceToLastPoint / (double)InterpolationDistanceInProjectorRange) - 1;
 
-                if (VectorImagePoints.Count + numberOfInterpolationPoints > MaximmNumberOfPoints)
+                if (VectorImagePoints.Count + numberOfInterpolationPoints > MaximumNumberOfPoints)
                 {
-                    numberOfInterpolationPoints = MaximmNumberOfPoints - VectorImagePoints.Count - 1;
+                    numberOfInterpolationPoints = MaximumNumberOfPoints - VectorImagePoints.Count - 1;
                 }
 
                 if (numberOfInterpolationPoints > 0)
