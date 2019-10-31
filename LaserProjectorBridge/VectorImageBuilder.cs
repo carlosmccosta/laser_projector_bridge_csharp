@@ -18,12 +18,13 @@ namespace LaserProjectorBridge
         public ProjectionModelProperties ProjectionModelProperties { get; set; } = new ProjectionModelProperties();
         public double DrawingAreaXOffset { get; set; } = 0.0;
         public double DrawingAreaYOffset { get; set; } = 0.0;
-        public Int32 MinimumProjectorRangeValueForClipping { get; set; } = (Int32)(Int32.MinValue * 0.98);
-        public Int32 MaximumProjectorRangeValueForClipping { get; set; } = (Int32)(Int32.MaxValue * 0.98);
+        public Int32 MinimumProjectorRangeValueForClipping { get; set; } = (Int32)(Int32.MinValue * 0.99);
+        public Int32 MaximumProjectorRangeValueForClipping { get; set; } = (Int32)(Int32.MaxValue * 0.99);
+        public bool TrimPointsOutsideDrawingArea { get; set; } = true;
         public double LineFirstPointMergeDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.0005, 2);
         public double LineFirstPointIgnoreDistanceSquaredInProjectorRange { get; set; } = Math.Pow(UInt32.MaxValue * 0.001, 2);
         public Int64 InterpolationDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.002);
-        public Int32 NumberOfBlankingPointsForLineStartAndEnd { get; set; } = 2;
+        public Int32 NumberOfBlankingPointsForLineStartAndEnd { get; set; } = 5;
         public Int32 MaximumNumberOfPoints { get; set; } = 16000;
         //public Int32 BlankingDistanceInProjectorRange { get; set; } = (Int32)(UInt32.MaxValue * 0.001);
         //public int NumberOfPointRepetitionsOnLineMiddlePoints { get; set; } = 1;
@@ -664,94 +665,207 @@ namespace LaserProjectorBridge
 
         public void CorrectDistortionOnVectorImage()
         {
-            double distanceToXImagePlane = ComputeDistanceToImagePlane(ProjectionModelProperties.FocalLengthXInPixels, ProjectionModelProperties.ImageWidthInPixels, (double)UInt32.MaxValue);
-            double distanceToYImagePlane = ComputeDistanceToImagePlane(ProjectionModelProperties.FocalLengthYInPixels, ProjectionModelProperties.ImageHeightInPixels, (double)UInt32.MaxValue);
+            double distanceToImagePlaneForUpdatingNewX = ComputeDistanceToImagePlane(ProjectionModelProperties.FocalLengthXInPixels, ProjectionModelProperties.ImageWidthInPixels);
+            double distanceToImagePlaneForUpdatingNewY = ComputeDistanceToImagePlane(ProjectionModelProperties.FocalLengthYInPixels, ProjectionModelProperties.ImageHeightInPixels);
+
+            ComputeScalingFactorsFromImagePlaneToDrawingArea(ProjectionModelProperties.FocalLengthXInPixels, ProjectionModelProperties.ImageWidthInPixels,
+                ProjectionModelProperties.FocalLengthYInPixels, ProjectionModelProperties.ImageHeightInPixels, ProjectionModelProperties.DistanceBetweenMirrors, ProjectionModelProperties.DistanceToImagePlane,
+                out double imagePlaneToDrawingAreaXScale, out double imagePlaneToDrawingAreaYScale);
+
+            List<NativeMethods.JMLaser.JMVectorStruct> VectorImagePointsTrimmed = new List<NativeMethods.JMLaser.JMVectorStruct>();
+
             for (int i = 0; i < VectorImagePoints.Count; ++i)
             {
                 NativeMethods.JMLaser.JMVectorStruct point = VectorImagePoints[i];
-                double originalX = (double)point.x;
-                double originalY = (double)point.y;
+                double originalX = (double)point.x / _drawingAreaToProjectorRangeXScale;
+                double originalY = (double)point.y / _drawingAreaToProjectorRangeXScale;
                 double newX = originalX;
                 double newY = originalY;
 
-                if (ProjectionModelProperties.DistanceBetweenMirrorsInProjectorRangePercentage != 0.0)
-                    CorrectGalvanometerMirrorsDistortion(ref newX, ref newY, distanceToXImagePlane, distanceToYImagePlane, ProjectionModelProperties.DistanceBetweenMirrorsInProjectorRangePercentage * (double)UInt32.MaxValue);
-
-                if (ProjectionModelProperties.HasLensDistortionCoefficients())
-                    CorrectLensDistortion(ref newX, ref newY, _drawingAreaToProjectorRangeXScale, _drawingAreaToProjectorRangeYScale, ProjectionModelProperties);
-
-                bool underflowX = (point.x < 0 && (Int32)newX > 0);
-                bool underflowY = (point.y < 0 && (Int32)newY > 0);
-                bool overflowX = (point.x > 0 && (Int32)newX < 0);
-                bool overflowY = (point.y > 0 && (Int32)newY < 0);
-                
-                if (((underflowX || overflowX) && Math.Abs(point.x) > (double)Int32.MaxValue * 0.5) ||
-                    ((underflowY || overflowY) && Math.Abs(point.y) > (double)Int32.MaxValue * 0.5))
+                if (ProjectionModelProperties.DistanceBetweenMirrors != 0.0)
                 {
-                    originalX /= _drawingAreaToProjectorRangeXScale;
-                    originalY /= _drawingAreaToProjectorRangeYScale;
-                    newX /= _drawingAreaToProjectorRangeXScale;
-                    newY /= _drawingAreaToProjectorRangeYScale;
-                    TrimLineInDrawingAreaAndProjectorOrigin(ref originalX, ref originalY, ref newX, ref newY);
-                    newX *= _drawingAreaToProjectorRangeXScale;
-                    newY *= _drawingAreaToProjectorRangeYScale;
+                    if (ProjectionModelProperties.ChangeToPrincipalPointOriginWhenCorrectingGalvanometerDistortion)
+                    {
+                        newX = ChangeFromDrawingAreaOriginToPrincipalPointOrigin(newX, ProjectionModelProperties.ImageWidthInPixels, ProjectionModelProperties.PrincipalPointXInPixels);
+                        newY = ChangeFromDrawingAreaOriginToPrincipalPointOrigin(newY, ProjectionModelProperties.ImageHeightInPixels, ProjectionModelProperties.PrincipalPointYInPixels);
+                    }
+
+                    if (ProjectionModelProperties.ComputeDistanceToImagePlane)
+                    {
+                        CorrectGalvanometerMirrorsDistortion(ref newX, ref newY, ProjectionModelProperties.DistanceBetweenMirrors, (distanceToImagePlaneForUpdatingNewX + distanceToImagePlaneForUpdatingNewY) / 2.0, distanceToImagePlaneForUpdatingNewX, distanceToImagePlaneForUpdatingNewY);
+                    }
+                    else
+                    {
+                        CorrectGalvanometerMirrorsDistortion(ref newX, ref newY, ProjectionModelProperties.DistanceBetweenMirrors, ProjectionModelProperties.DistanceToImagePlane, ProjectionModelProperties.DistanceToImagePlane, ProjectionModelProperties.DistanceToImagePlane);
+                    }
+
+                    if (ProjectionModelProperties.ScaleImagePlanePointsUsingIntrinsics)
+                    {
+                        newX *= imagePlaneToDrawingAreaXScale;
+                        newY *= imagePlaneToDrawingAreaYScale;
+                    }
+
+                    if (ProjectionModelProperties.ChangeToPrincipalPointOriginWhenCorrectingGalvanometerDistortion)
+                    {
+                        newX = ChangeFromPrincipalPointOriginToDrawingAreaOrigin(newX, ProjectionModelProperties.ImageWidthInPixels, ProjectionModelProperties.PrincipalPointXInPixels);
+                        newY = ChangeFromPrincipalPointOriginToDrawingAreaOrigin(newY, ProjectionModelProperties.ImageHeightInPixels, ProjectionModelProperties.PrincipalPointYInPixels);
+                    }
                 }
 
-                point.x = (Int32)newX;
-                point.y = (Int32)newY;
+                if (ProjectionModelProperties.HasLensDistortionCoefficients())
+                    CorrectLensDistortion(ref newX, ref newY, ProjectionModelProperties);
 
-                if (point.x <= MinimumProjectorRangeValueForClipping)
-                    point.x = MinimumProjectorRangeValueForClipping;
-                else if (point.x >= MaximumProjectorRangeValueForClipping)
-                    point.x = MaximumProjectorRangeValueForClipping;
+                bool pointOutsideDrawingArea = false;
+                if (newX < -ProjectionModelProperties.ImageWidthInPixels / 2.0 || newX > ProjectionModelProperties.ImageWidthInPixels / 2.0 ||
+                    newY < -ProjectionModelProperties.ImageHeightInPixels / 2.0 || newY > ProjectionModelProperties.ImageHeightInPixels / 2.0)
+                {
+                    pointOutsideDrawingArea = true;
+                    if (TrimPointsOutsideDrawingArea)
+                    {
+                        if (i == 0)
+                        {
+                            TrimLineInDrawingAreaAndProjectorOrigin(ref originalX, ref originalY, ref newX, ref newY);
+                        }
+                        else
+                        {
+                            NativeMethods.JMLaser.JMVectorStruct previousPoint = VectorImagePoints[i - 1];
+                            double previousPointX = (double)previousPoint.x / _drawingAreaToProjectorRangeXScale;
+                            double previousPointY = (double)previousPoint.y / _drawingAreaToProjectorRangeXScale;
+                            TrimLineInDrawingAreaAndProjectorOrigin(ref previousPointX, ref previousPointY, ref newX, ref newY);
+                        }
+                    }
+                }
 
-                if (point.y <= MinimumProjectorRangeValueForClipping)
-                    point.y = MinimumProjectorRangeValueForClipping;
-                else if (point.y >= MaximumProjectorRangeValueForClipping)
-                    point.y = MaximumProjectorRangeValueForClipping;
+                if (!pointOutsideDrawingArea || (pointOutsideDrawingArea && TrimPointsOutsideDrawingArea))
+                {
+                    newX *= _drawingAreaToProjectorRangeXScale;
+                    newY *= _drawingAreaToProjectorRangeYScale;
 
-                VectorImagePoints[i] = point;
+                    point.x = (Int32) newX;
+                    point.y = (Int32) newY;
+
+                    if (newX <= MinimumProjectorRangeValueForClipping)
+                        point.x = MinimumProjectorRangeValueForClipping;
+                    else if (newX >= MaximumProjectorRangeValueForClipping)
+                        point.x = MaximumProjectorRangeValueForClipping;
+
+                    if (newY <= MinimumProjectorRangeValueForClipping)
+                        point.y = MinimumProjectorRangeValueForClipping;
+                    else if (newY >= MaximumProjectorRangeValueForClipping)
+                        point.y = MaximumProjectorRangeValueForClipping;
+
+                    if (TrimPointsOutsideDrawingArea)
+                        VectorImagePoints[i] = point;
+                    else
+                        VectorImagePointsTrimmed.Add(point);
+                }
+                else
+                {
+                    if (point.i == 0 && VectorImagePointsTrimmed.Count > 0)
+                    {
+                        NativeMethods.JMLaser.JMVectorStruct previousPoint = VectorImagePointsTrimmed.Last();
+                        previousPoint.i = 0;
+                        VectorImagePointsTrimmed.Add(previousPoint);
+                    }
+                }
+            }
+
+            if (!TrimPointsOutsideDrawingArea)
+            {
+                VectorImagePoints = VectorImagePointsTrimmed;
             }
         }
 
-        public static void CorrectGalvanometerMirrorsDistortion(ref double x, ref double y, double distanceToXImagePlane, double distanceToYImagePlane, double distanceBetweenMirrors)
+        public static void CorrectGalvanometerMirrorsDistortion(ref double x, ref double y, double distanceBetweenMirrors, double distanceToImagePlane, double distanceToImagePlaneForUpdatingNewX, double distanceToImagePlaneForUpdatingNewY)
         {
-            double yDenominator = distanceBetweenMirrors - distanceToYImagePlane;
-            double galvoYAngle = Math.Atan(y / yDenominator);
-            double xDenominator = distanceBetweenMirrors * (((distanceToXImagePlane - distanceBetweenMirrors) / (distanceBetweenMirrors * Math.Cos(galvoYAngle))) + 1);
-            double galvoXAngle = Math.Atan(x / xDenominator);
-            y = -(Math.Tan(galvoYAngle) * distanceToYImagePlane);
-            x = Math.Tan(galvoXAngle) * distanceToXImagePlane;
+            DrawingAreaToGalvoAngles(x, y, distanceBetweenMirrors, distanceToImagePlane, out double galvoXAngle, out double galvoYAngle);
+            PinHoleAnglesToDrawingArea(galvoXAngle, galvoYAngle, distanceToImagePlaneForUpdatingNewX, distanceToImagePlaneForUpdatingNewY, out x, out y);
+
+            // Reverse of above
+            //DrawingAreaToPinHoleAngles(x, y, distanceToImagePlaneForUpdatingNewX, distanceToImagePlaneForUpdatingNewY, out double xAngle, out double yAngle);
+            //GalvoAnglesToDrawingArea(xAngle, yAngle, distanceBetweenMirrors, distanceToImagePlane, out x, out y);
         }
 
-        public static void CorrectLensDistortion(ref double x, ref double y, double drawingAreaToProjectorRangeXScale, double drawingAreaToProjectorRangeYScale, ProjectionModelProperties projectionModelProperties)
+        public static void DrawingAreaToGalvoAngles(double x, double y, double distanceBetweenMirrors, double distanceToImagePlane, out double galvoXAngle, out double galvoYAngle)
         {
-            double normalizedX = ((x + (double)Int32.MaxValue) / drawingAreaToProjectorRangeXScale - projectionModelProperties.PrincipalPointXInPixels) / projectionModelProperties.FocalLengthXInPixels;
-            double normalizedY = ((y + (double)Int32.MaxValue) / drawingAreaToProjectorRangeYScale - projectionModelProperties.PrincipalPointYInPixels) / projectionModelProperties.FocalLengthYInPixels;
+            double yDenominator = distanceToImagePlane - distanceBetweenMirrors;
+            galvoYAngle = Math.Atan(y / yDenominator);
+            double xDenominator = distanceBetweenMirrors * (((distanceToImagePlane - distanceBetweenMirrors) / (Math.Cos(galvoYAngle) * distanceBetweenMirrors)) + 1);
+            galvoXAngle = Math.Atan(x / xDenominator);
+        }
+
+        public static void GalvoAnglesToDrawingArea(double galvoXAngle, double galvoYAngle, double distanceBetweenMirrors, double distanceToImagePlane, out double x, out double y)
+        {
+            x = Math.Tan(galvoXAngle) * distanceBetweenMirrors * (((distanceToImagePlane - distanceBetweenMirrors) / (Math.Cos(galvoYAngle) * distanceBetweenMirrors)) + 1);
+            y = Math.Tan(galvoYAngle) * (distanceToImagePlane - distanceBetweenMirrors);
+        }
+
+        public static void DrawingAreaToPinHoleAngles(double x, double y, double distanceToImagePlaneForX, double distanceToImagePlaneForY, out double xAngle, out double yAngle)
+        {
+            xAngle = Math.Atan(x / distanceToImagePlaneForX);
+            yAngle = Math.Atan(y / distanceToImagePlaneForY);
+        }
+
+        public static void PinHoleAnglesToDrawingArea(double galvoXAngle, double galvoYAngle, double distanceToImagePlaneForUpdatingX, double distanceToImagePlaneForUpdatingY, out double x, out double y)
+        {
+            // Pinhole angles to screen (TODO: improve conversion because galvos do not have a center of projection)
+            x = Math.Tan(galvoXAngle) * distanceToImagePlaneForUpdatingX;
+            y = Math.Tan(galvoYAngle) * distanceToImagePlaneForUpdatingY;
+        }
+
+        public static double ComputeDistanceToImagePlane(double focalLengthInPixels, double imageSizeInPixels)
+        {
+            double fov = ComputeFieldOfView(focalLengthInPixels, imageSizeInPixels);
+            return (imageSizeInPixels / 2.0) / Math.Tan(fov / 2);
+        }
+
+        public static double ComputeFieldOfView(double focalLengthInPixels, double imageSizeInPixels)
+        {
+            return Math.Atan(imageSizeInPixels / (focalLengthInPixels * 2.0)) * 2.0;
+        }
+
+        public static void ComputeScalingFactorsFromImagePlaneToDrawingArea(double focalLengthInPixelsX, double imageSizeInPixelsX, double focalLengthInPixelsY, double imageSizeInPixelsY, double distanceBetweenMirrors, double distanceToImagePlane, out double xScale, out double yScale)
+        {
+            double fovX = ComputeFieldOfView(focalLengthInPixelsX, imageSizeInPixelsX);
+            double fovY = ComputeFieldOfView(focalLengthInPixelsY, imageSizeInPixelsY);
+            GalvoAnglesToDrawingArea(fovX / 2.0, fovY / 2.0, distanceBetweenMirrors, distanceToImagePlane, out double x, out double y);
+            xScale = imageSizeInPixelsX / x;
+            yScale = imageSizeInPixelsY / y;
+        }
+
+        public static double ChangeFromDrawingAreaOriginToPrincipalPointOrigin(double drawingAreaValue, double imageSize, double principalPoint)
+        {
+            return (drawingAreaValue + (imageSize / 2.0)) - principalPoint;
+        }
+
+        public static double ChangeFromPrincipalPointOriginToDrawingAreaOrigin(double drawingAreaValue, double imageSize, double principalPoint)
+        {
+            return (drawingAreaValue - (imageSize / 2.0)) + principalPoint;
+        }
+
+        public static void CorrectLensDistortion(ref double x, ref double y, ProjectionModelProperties projectionModelProperties)
+        {
+            double normalizedX = ChangeFromDrawingAreaOriginToPrincipalPointOrigin(x, projectionModelProperties.ImageWidthInPixels, projectionModelProperties.PrincipalPointXInPixels) / projectionModelProperties.FocalLengthXInPixels;
+            double normalizedY = ChangeFromDrawingAreaOriginToPrincipalPointOrigin(y, projectionModelProperties.ImageHeightInPixels, projectionModelProperties.PrincipalPointYInPixels) / projectionModelProperties.FocalLengthYInPixels;
             double distanceSquared = normalizedX * normalizedX + normalizedY * normalizedY;
 
-            double radialDistortionCorrectonScalingFactor = (1 +
+            double radialDistortionCorrectionScalingFactor = (1 +
                 projectionModelProperties.RadialDistortionCorrectionFirstCoefficient * distanceSquared + 
                 projectionModelProperties.RadialDistortionCorrectionSecondCoefficient * distanceSquared * distanceSquared +
                 projectionModelProperties.RadialDistortionCorrectionThirdCoefficient * distanceSquared * distanceSquared * distanceSquared);
 
-            double tangencialDistortionCorrectionOffsetFactorX = 2 * projectionModelProperties.TangencialDistortionCorrectionFirstCoefficient * normalizedX * normalizedY + 
+            double tangentialDistortionCorrectionOffsetFactorX = 2 * projectionModelProperties.TangencialDistortionCorrectionFirstCoefficient * normalizedX * normalizedY + 
                 projectionModelProperties.TangencialDistortionCorrectionSecondCoefficient * (distanceSquared + 2 * normalizedX * normalizedX);
-            double tangencialDistortionCorrectionOffsetFactorY = projectionModelProperties.TangencialDistortionCorrectionFirstCoefficient * (distanceSquared + 2 * normalizedY * normalizedY) + 
+            double tangentialDistortionCorrectionOffsetFactorY = projectionModelProperties.TangencialDistortionCorrectionFirstCoefficient * (distanceSquared + 2 * normalizedY * normalizedY) + 
                 2 * projectionModelProperties.TangencialDistortionCorrectionSecondCoefficient * normalizedX * normalizedY;
 
-            double normalizedXUndistorted = normalizedX * radialDistortionCorrectonScalingFactor + tangencialDistortionCorrectionOffsetFactorX;
-            double normalizedYUndistorted = normalizedY * radialDistortionCorrectonScalingFactor + tangencialDistortionCorrectionOffsetFactorY;
+            double normalizedXUndistorted = normalizedX * radialDistortionCorrectionScalingFactor + tangentialDistortionCorrectionOffsetFactorX;
+            double normalizedYUndistorted = normalizedY * radialDistortionCorrectionScalingFactor + tangentialDistortionCorrectionOffsetFactorY;
 
-            x = (normalizedXUndistorted * projectionModelProperties.FocalLengthXInPixels + projectionModelProperties.PrincipalPointXInPixels) * drawingAreaToProjectorRangeXScale - Int32.MaxValue;
-            y = (normalizedYUndistorted * projectionModelProperties.FocalLengthYInPixels + projectionModelProperties.PrincipalPointYInPixels) * drawingAreaToProjectorRangeYScale - Int32.MaxValue;
+            x = ChangeFromPrincipalPointOriginToDrawingAreaOrigin(normalizedXUndistorted * projectionModelProperties.FocalLengthXInPixels, projectionModelProperties.ImageWidthInPixels, projectionModelProperties.PrincipalPointXInPixels);
+            y = ChangeFromPrincipalPointOriginToDrawingAreaOrigin(normalizedYUndistorted * projectionModelProperties.FocalLengthYInPixels, projectionModelProperties.ImageHeightInPixels, projectionModelProperties.PrincipalPointYInPixels);
         }
 
-        public static double ComputeDistanceToImagePlane(double focalLengthInPixels, double imageSizeInPixels, double projectorRange)
-        {
-            double fov = Math.Atan(imageSizeInPixels / (focalLengthInPixels * 2.0)) * 2.0;
-            return (projectorRange / 2.0 / Math.Tan(fov / 2));
-        }
 
         public static bool LineIntersection(double p0X, double p0Y, double p1X, double p1Y,
             double p2X, double p2Y, double p3X, double p3Y,
