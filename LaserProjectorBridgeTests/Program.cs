@@ -30,6 +30,8 @@ namespace LaserProjectorBridgeTests
                 TestSingleton();
                 TestSingletonMultiThread();
                 TestJMLaserOutput(numberOfProjectors);
+                TestJMLaserOutput(numberOfProjectors);
+                TestJMLaserOutput(numberOfProjectors);
             }
 
             LaserProjectorBridge.JMLaserProjector.jmLaserBridgeCloseDll();
@@ -147,18 +149,32 @@ namespace LaserProjectorBridgeTests
         {
             LaserProjectorBridge.VectorImageBuilder vectorImageBuilder = new LaserProjectorBridge.VectorImageBuilder();
             vectorImageBuilder.InterpolationDistanceInProjectorRange = (Int64)(UInt32.MaxValue * 0.05);
-            vectorImageBuilder.LineFirstPointIgnoreDistanceSquaredInProjectorRange = -Math.Pow(UInt32.MaxValue * 0.0013, 2);
-            vectorImageBuilder.LineFirstPointMergeDistanceSquaredInProjectorRange = -Math.Pow(UInt32.MaxValue * 0.0005, 2);
-            vectorImageBuilder.NumberOfBlankingPointsForLineStartAndEnd = 2;
-            vectorImageBuilder.ProjectionModelProperties.FocalLengthXInPixels = 2753.0;
-            vectorImageBuilder.ProjectionModelProperties.FocalLengthYInPixels = 2753.0;
-            vectorImageBuilder.ProjectionModelProperties.DistanceBetweenMirrorsInProjectorRangePercentage = 0.01;
+            //vectorImageBuilder.NumberOfBlankingPointsForLineStartAndEnd = 5;
+            //vectorImageBuilder.LineFirstPointIgnoreDistanceSquaredInProjectorRange = -Math.Pow(UInt32.MaxValue * 0.0013, 2);
+            //vectorImageBuilder.LineFirstPointMergeDistanceSquaredInProjectorRange = -Math.Pow(UInt32.MaxValue * 0.0005, 2);
+            //vectorImageBuilder.ProjectionModelProperties.FocalLengthXInPixels = 2000.0;
+            //vectorImageBuilder.ProjectionModelProperties.FocalLengthYInPixels = 2000.0;
+            vectorImageBuilder.ProjectionModelProperties.PrincipalPointXInPixels = 1000.0;
+            vectorImageBuilder.ProjectionModelProperties.PrincipalPointYInPixels = 1000.0;
+            vectorImageBuilder.ProjectionModelProperties.DistanceBetweenMirrors = vectorImageBuilder.ProjectionModelProperties.FocalLengthXInPixels * 0.001;
+            vectorImageBuilder.ProjectionModelProperties.DistanceToImagePlane = vectorImageBuilder.ProjectionModelProperties.FocalLengthXInPixels * 1.0;
+            //vectorImageBuilder.ProjectionModelProperties.ComputeDistanceToImagePlane = false;
+            //vectorImageBuilder.ProjectionModelProperties.ScaleImagePlanePointsUsingIntrinsics = false;
+            //vectorImageBuilder.ProjectionModelProperties.RadialDistortionCorrectionFirstCoefficient = 0.0;
+            //vectorImageBuilder.ProjectionModelProperties.RadialDistortionCorrectionSecondCoefficient = 0.0;
+            //vectorImageBuilder.ProjectionModelProperties.RadialDistortionCorrectionThirdCoefficient = 0.0;
+            //vectorImageBuilder.ProjectionModelProperties.TangencialDistortionCorrectionFirstCoefficient = 0.0;
+            //vectorImageBuilder.ProjectionModelProperties.TangencialDistortionCorrectionSecondCoefficient = 0.0;
             vectorImageBuilder.StartNewVectorImage();
             vectorImageBuilder.VectorImagePoints = points;
 
             if (showDistortionCorrectionOnly)
             {
-                LaserProjectorBridge.PatternBuilder.CreateGridInProjectorRange(ref vectorImageBuilder, 10, 10, (Int32)(UInt32.MaxValue / 10), (Int32)(UInt32.MaxValue / 10), Int32.MinValue, Int32.MinValue);
+                Int32 margin = (Int32)((double)UInt32.MaxValue * 0.02);
+                UInt32 width = (UInt32) ((double) UInt32.MaxValue - margin * 2);
+                int columns = 10;
+                int rows = 10;
+                LaserProjectorBridge.PatternBuilder.CreateGridInProjectorRange(ref vectorImageBuilder, columns, rows, (UInt32)(width / columns), (UInt32)(width / rows), Int32.MinValue + margin, Int32.MinValue + margin);
                 //LaserProjectorBridge.PatternBuilder.CreateGridInProjectorRange(ref vectorImageBuilder, 8, 8, (Int32)(UInt32.MaxValue / 10), (Int32)(UInt32.MaxValue / 10), Int32.MinValue + (Int32)((UInt32.MaxValue / 10) * 1), Int32.MinValue + (Int32)((UInt32.MaxValue / 10) * 1));
                 //LaserProjectorBridge.PatternBuilder.CreateGridInProjectorRange(ref vectorImageBuilder, 6, 6, (Int32)(UInt32.MaxValue / 10), (Int32)(UInt32.MaxValue / 10), Int32.MinValue + (Int32)((UInt32.MaxValue / 10) * 3), Int32.MinValue + (Int32)((UInt32.MaxValue / 10) * 3));
             }
