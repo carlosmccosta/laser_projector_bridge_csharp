@@ -188,7 +188,13 @@ namespace LaserProjectorBridge
         {
             if (projectorName.Length == 0) { return 0; }
             if (jmLaserBridgeEnumerateDevices() <= 0) { return 0; }
-            return NativeMethods.JMLaser.jmLaserOpenDevice(projectorName);
+            int openStatus = NativeMethods.JMLaser.jmLaserOpenDevice(projectorName);
+            if (openStatus == NativeMethods.JMLaser.JMLASER_ERROR_NOT_ENUMERATED)
+            {
+                if (NativeMethods.JMLaser.jmLaserEnumerateDevices() <= 0) { return 0; }
+                openStatus = NativeMethods.JMLaser.jmLaserOpenDevice(projectorName);
+            }
+            return openStatus;
         }
 
         public static int jmLaserBridgeGetMaxFrameSize(int projectorHandle)
@@ -329,10 +335,14 @@ namespace LaserProjectorBridge
 
         public bool CloseProjector()
         {
-            if (ProjectorHandle >= 0 && NativeMethods.JMLaser.jmLaserCloseDevice(ProjectorHandle) == 0)
+            if (ProjectorHandle >= 0)
             {
-                ProjectorHandle = -1;
-                return true;
+                int status = NativeMethods.JMLaser.jmLaserCloseDevice(ProjectorHandle);
+                if (status == 0)
+                {
+                    ProjectorHandle = -1;
+                    return true;
+                }
             }
             return false;
         }
@@ -359,7 +369,7 @@ namespace LaserProjectorBridge
             return false;
         }
 
-        public bool SendVectorImageToProjector(ref List<NativeMethods.JMLaser.JMVectorStruct> points, uint speed, uint repetitions = 0, bool addReverseImage = true)
+        public bool SendVectorImageToProjector(ref List<NativeMethods.JMLaser.JMVectorStruct> points, uint speed = 42000, uint repetitions = 0, bool addReverseImage = false)
         {
             if (speed < ProjectorMinimumSpeed) { speed = (uint)ProjectorMinimumSpeed; }
             if (speed > ProjectorMaximumSpeed) { speed = (uint)ProjectorMaximumSpeed; }
@@ -407,6 +417,9 @@ namespace LaserProjectorBridge
         {
             if (ProjectorHandle >= 0 && ProjectorOutputStarted)
             {
+                var vectorImage = new List<NativeMethods.JMLaser.JMVectorStruct>();
+                vectorImage.Add(new NativeMethods.JMLaser.JMVectorStruct());
+                SendVectorImageToProjector(ref vectorImage, (uint)ProjectorMinimumSpeed);
                 if (NativeMethods.JMLaser.jmLaserStopOutput(ProjectorHandle) == 0)
                 {
                     ProjectorOutputStarted = false;
