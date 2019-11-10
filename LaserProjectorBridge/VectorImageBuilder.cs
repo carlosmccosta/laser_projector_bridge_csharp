@@ -61,63 +61,63 @@ namespace LaserProjectorBridge
                 for (int i = VectorImagePoints.Count - 1; i >= 0; --i)
                 {
                     NativeMethods.JMLaser.JMVectorStruct point = VectorImagePoints[i];
-                    AddNewPoint(ref point);
+                    VectorImagePoints.Add(point);
                 }
             }
         }
 
-        public void convertPointFromDrawingAreaToProjectorOrigin(double x, double y, out double newX, out double newY, AxisPosition pointOriginAxisPosition = AxisPosition.BottomLeft)
+        public void convertPointFromDrawingAreaOriginToProjectorOrigin(double x, double y, out double xPointInDrawingAreaAndProjectorOrigin, out double yPointInDrawingAreaAndProjectorOrigin, AxisPosition projectorOriginAxisPosition = AxisPosition.BottomLeft)
         {
-            switch (pointOriginAxisPosition)
+            switch (projectorOriginAxisPosition)
             {
                 case AxisPosition.TopLeft:
                 {
-                    newX = x - ProjectionModelProperties.ImageWidthInPixels * 0.5;
-                    newY = (ProjectionModelProperties.ImageHeightInPixels - y) - ProjectionModelProperties.ImageHeightInPixels * 0.5;
+                    xPointInDrawingAreaAndProjectorOrigin = x - ProjectionModelProperties.ImageWidthInPixels * 0.5;
+                    yPointInDrawingAreaAndProjectorOrigin = (ProjectionModelProperties.ImageHeightInPixels - y) - ProjectionModelProperties.ImageHeightInPixels * 0.5;
                     break;
                 }
 
                 case AxisPosition.BottomLeft:
                 {
-                    newX = x - ProjectionModelProperties.ImageWidthInPixels * 0.5;
-                    newY = y - ProjectionModelProperties.ImageHeightInPixels * 0.5;
+                    xPointInDrawingAreaAndProjectorOrigin = x - ProjectionModelProperties.ImageWidthInPixels * 0.5;
+                    yPointInDrawingAreaAndProjectorOrigin = y - ProjectionModelProperties.ImageHeightInPixels * 0.5;
                     break;
                 }
 
                 case AxisPosition.Middle:
                 {
-                    newX = x;
-                    newY = y;
+                    xPointInDrawingAreaAndProjectorOrigin = x;
+                    yPointInDrawingAreaAndProjectorOrigin = y;
                     break;
                 }
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(pointOriginAxisPosition), pointOriginAxisPosition, null);
+                    throw new ArgumentOutOfRangeException(nameof(projectorOriginAxisPosition), projectorOriginAxisPosition, null);
             }
         }
 
-        public void ConvertProjectorOriginToDrawingAreaOrigin(double x, double y, out double newX, out double newY, AxisPosition drawingAreaOriginAxisPosition = AxisPosition.BottomLeft)
+        public void ConvertPointFromProjectorOriginToDrawingAreaOrigin(double x, double y, out double xPointInDrawingAreaOrigin, out double yPointInDrawingAreaOrigin, AxisPosition drawingAreaOriginAxisPosition = AxisPosition.BottomLeft)
         {
             switch (drawingAreaOriginAxisPosition)
             {
                 case AxisPosition.TopLeft:
                     {
-                        newX = x + ProjectionModelProperties.ImageWidthInPixels * 0.5;
-                        newY = (ProjectionModelProperties.ImageHeightInPixels - y) + ProjectionModelProperties.ImageHeightInPixels * 0.5;
+                        xPointInDrawingAreaOrigin = x + ProjectionModelProperties.ImageWidthInPixels * 0.5;
+                        yPointInDrawingAreaOrigin = (ProjectionModelProperties.ImageHeightInPixels - y) + ProjectionModelProperties.ImageHeightInPixels * 0.5;
                         break;
                     }
 
                 case AxisPosition.BottomLeft:
                     {
-                        newX = x + ProjectionModelProperties.ImageWidthInPixels * 0.5;
-                        newY = y + ProjectionModelProperties.ImageHeightInPixels * 0.5;
+                        xPointInDrawingAreaOrigin = x + ProjectionModelProperties.ImageWidthInPixels * 0.5;
+                        yPointInDrawingAreaOrigin = y + ProjectionModelProperties.ImageHeightInPixels * 0.5;
                         break;
                     }
 
                 case AxisPosition.Middle:
                     {
-                        newX = x;
-                        newY = y;
+                        xPointInDrawingAreaOrigin = x;
+                        yPointInDrawingAreaOrigin = y;
                         break;
                     }
 
@@ -131,7 +131,7 @@ namespace LaserProjectorBridge
         {
             try
             {
-                checked { convertPointFromDrawingAreaToProjectorOrigin(x, y, out xPointInDrawingAreaAndProjectorOrigin, out yPointInDrawingAreaAndProjectorOrigin, originAxisPosition); }
+                checked { convertPointFromDrawingAreaOriginToProjectorOrigin(x, y, out xPointInDrawingAreaAndProjectorOrigin, out yPointInDrawingAreaAndProjectorOrigin, originAxisPosition); }
                 return true;
             }
             catch (System.OverflowException)
@@ -198,7 +198,7 @@ namespace LaserProjectorBridge
 
             try
             {
-                checked { ConvertProjectorOriginToDrawingAreaOrigin(xPointInDrawingAreaAndProjectorOrigin, yPointInDrawingAreaAndProjectorOrigin, out xPointInDrawingAreaRange, out yPointInDrawingAreaRange, originAxisPosition); }
+                checked { ConvertPointFromProjectorOriginToDrawingAreaOrigin(xPointInDrawingAreaAndProjectorOrigin, yPointInDrawingAreaAndProjectorOrigin, out xPointInDrawingAreaRange, out yPointInDrawingAreaRange, originAxisPosition); }
             }
             catch (System.OverflowException)
             {
@@ -395,10 +395,7 @@ namespace LaserProjectorBridge
         {
             double halfWidth = ProjectionModelProperties.ImageWidthInPixels * 0.5;
             double halfHeight = ProjectionModelProperties.ImageHeightInPixels * 0.5;
-            if (x >= -halfWidth && x <= halfWidth && y >= -halfHeight && y <= halfHeight)
-                return true;
-            else
-                return false;
+            return (x >= -halfWidth && x <= halfWidth && y >= -halfHeight && y <= halfHeight);
         }
 
         public bool AddNewLine(double startX, double startY, double endX, double endY,
@@ -478,7 +475,7 @@ namespace LaserProjectorBridge
                 }
                 else
                 // check if points are the same using their coordinates (when ignore distance threshold is not active)
-                if (LineFirstPointIgnoreDistanceSquaredInProjectorRange < 0 && (lastPoint.x != startPoint.x || lastPoint.y != startPoint.y))
+                if (LineFirstPointIgnoreDistanceSquaredInProjectorRange <= 0 && (lastPoint.x != startPoint.x || lastPoint.y != startPoint.y))
                 {
                     startPointDifferentThanLastPoint = true;
                 }
@@ -609,19 +606,6 @@ namespace LaserProjectorBridge
             }
         }
 
-        public void AddFirstPointBlankingPoints(NativeMethods.JMLaser.JMVectorStruct startPoint)
-        {
-            NativeMethods.JMLaser.JMVectorStruct startPointOff = startPoint;
-            startPointOff.i = 0;
-            AddNewPoint(ref startPointOff);
-            for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd - 1; ++i)
-                AddNewPoint(ref startPointOff);
-
-            AddNewPoint(ref startPoint);
-            for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd - 1; ++i)
-                AddNewPoint(ref startPoint);
-        }
-
         public void AddLastPointBlankingPoints()
         {
             if (VectorImagePoints.Count > 0)
@@ -654,6 +638,19 @@ namespace LaserProjectorBridge
                 VectorImagePoints.RemoveAt(VectorImagePoints.Count - 1);
         }
 
+        public void AddFirstPointBlankingPoints(NativeMethods.JMLaser.JMVectorStruct startPoint)
+        {
+            NativeMethods.JMLaser.JMVectorStruct startPointOff = startPoint;
+            startPointOff.i = 0;
+            AddNewPoint(ref startPointOff);
+            for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd - 1; ++i)
+                AddNewPoint(ref startPointOff);
+
+            AddNewPoint(ref startPoint);
+            for (int i = 0; i < NumberOfBlankingPointsForLineStartAndEnd - 1; ++i)
+                AddNewPoint(ref startPoint);
+        }
+
         public void CorrectDistortionOnVectorImage()
         {
             double distanceToImagePlaneForUpdatingNewX = ComputeDistanceToImagePlane(ProjectionModelProperties.FocalLengthXInPixels, ProjectionModelProperties.ImageWidthInPixels);
@@ -669,7 +666,7 @@ namespace LaserProjectorBridge
             {
                 NativeMethods.JMLaser.JMVectorStruct point = VectorImagePoints[i];
                 double originalX = (double)point.x / _drawingAreaToProjectorRangeXScale;
-                double originalY = (double)point.y / _drawingAreaToProjectorRangeXScale;
+                double originalY = (double)point.y / _drawingAreaToProjectorRangeYScale;
                 double newX = originalX;
                 double newY = originalY;
 
@@ -721,7 +718,7 @@ namespace LaserProjectorBridge
                         {
                             NativeMethods.JMLaser.JMVectorStruct previousPoint = VectorImagePoints[i - 1];
                             double previousPointX = (double)previousPoint.x / _drawingAreaToProjectorRangeXScale;
-                            double previousPointY = (double)previousPoint.y / _drawingAreaToProjectorRangeXScale;
+                            double previousPointY = (double)previousPoint.y / _drawingAreaToProjectorRangeYScale;
                             TrimLineInDrawingAreaAndProjectorOrigin(ref previousPointX, ref previousPointY, ref newX, ref newY);
                         }
                     }
