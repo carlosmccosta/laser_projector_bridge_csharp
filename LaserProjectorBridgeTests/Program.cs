@@ -157,14 +157,14 @@ namespace LaserProjectorBridgeTests
             vectorImageBuilder.ProjectionModelProperties.PrincipalPointXInPixels = 1000.0;
             vectorImageBuilder.ProjectionModelProperties.PrincipalPointYInPixels = 1000.0;
             vectorImageBuilder.ProjectionModelProperties.DistanceBetweenMirrors = vectorImageBuilder.ProjectionModelProperties.FocalLengthXInPixels * 0.001;
-            vectorImageBuilder.ProjectionModelProperties.DistanceToImagePlane = vectorImageBuilder.ProjectionModelProperties.FocalLengthXInPixels * 1.0;
-            //vectorImageBuilder.ProjectionModelProperties.ComputeDistanceToImagePlane = false;
+            vectorImageBuilder.ProjectionModelProperties.DistanceToImagePlaneForCorrectingDistortion = vectorImageBuilder.ProjectionModelProperties.FocalLengthXInPixels * 1.0;
+            //vectorImageBuilder.ProjectionModelProperties.ComputeDistancesToImagePlanes = false;
             //vectorImageBuilder.ProjectionModelProperties.ScaleImagePlanePointsUsingIntrinsics = false;
             //vectorImageBuilder.ProjectionModelProperties.RadialDistortionCorrectionFirstCoefficient = 0.0;
             //vectorImageBuilder.ProjectionModelProperties.RadialDistortionCorrectionSecondCoefficient = 0.0;
             //vectorImageBuilder.ProjectionModelProperties.RadialDistortionCorrectionThirdCoefficient = 0.0;
-            //vectorImageBuilder.ProjectionModelProperties.TangencialDistortionCorrectionFirstCoefficient = 0.0;
-            //vectorImageBuilder.ProjectionModelProperties.TangencialDistortionCorrectionSecondCoefficient = 0.0;
+            //vectorImageBuilder.ProjectionModelProperties.TangentialDistortionCorrectionFirstCoefficient = 0.0;
+            //vectorImageBuilder.ProjectionModelProperties.TangentialDistortionCorrectionSecondCoefficient = 0.0;
             vectorImageBuilder.StartNewVectorImage();
             vectorImageBuilder.VectorImagePoints = points;
 
