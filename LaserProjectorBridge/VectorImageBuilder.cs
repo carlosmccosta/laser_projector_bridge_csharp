@@ -660,9 +660,7 @@ namespace LaserProjectorBridge
                 ProjectionModelProperties.DistanceToImagePlaneForCorrectingDistortion = ProjectionModelProperties.DistanceToImagePlaneForConvertingXGalvoAngleToDrawingArea;
             }
 
-            ComputeScalingFactorsFromImagePlaneToDrawingArea(ProjectionModelProperties.FocalLengthXInPixels, ProjectionModelProperties.ImageWidthInPixels,
-                ProjectionModelProperties.FocalLengthYInPixels, ProjectionModelProperties.ImageHeightInPixels, ProjectionModelProperties.DistanceBetweenMirrors, ProjectionModelProperties.DistanceToImagePlaneForCorrectingDistortion,
-                out double imagePlaneToDrawingAreaXScale, out double imagePlaneToDrawingAreaYScale);
+            ComputeScalingFactorsFromImagePlaneToDrawingArea(out double imagePlaneToDrawingAreaXScale, out double imagePlaneToDrawingAreaYScale);
 
             List<NativeMethods.JMLaser.JMVectorStruct> VectorImagePointsTrimmed = new List<NativeMethods.JMLaser.JMVectorStruct>();
 
@@ -765,6 +763,19 @@ namespace LaserProjectorBridge
             }
         }
 
+        public void ComputeScalingFactorsFromImagePlaneToDrawingArea(out double xScale, out double yScale)
+        {
+            double fovX = ComputeFieldOfView(ProjectionModelProperties.FocalLengthXInPixels, ProjectionModelProperties.ImageWidthInPixels);
+            double fovY = ComputeFieldOfView(ProjectionModelProperties.FocalLengthYInPixels, ProjectionModelProperties.ImageHeightInPixels);
+
+            double x, y;
+            GalvoAnglesToDrawingArea(fovX / 2.0, fovY / 2.0, ProjectionModelProperties.DistanceBetweenMirrors, ProjectionModelProperties.DistanceToImagePlaneForCorrectingDistortion, out x, out y);
+            //PinHoleAnglesToDrawingArea(fovX / 2.0, fovY / 2.0, ProjectionModelProperties.DistanceToImagePlaneForConvertingXGalvoAngleToDrawingArea, ProjectionModelProperties.DistanceToImagePlaneForConvertingYGalvoAngleToDrawingArea, out x, out y, ProjectionModelProperties.UseRayToPlaneIntersectionForConvertingGalvosAnglesToDrawingArea);
+
+            xScale = x / (ProjectionModelProperties.ImageWidthInPixels / 2);
+            yScale = y / (ProjectionModelProperties.ImageHeightInPixels / 2);
+        }
+
         public static void CorrectGalvanometerMirrorsDistortion(ref double x, ref double y, double distanceBetweenMirrors, double distanceToImagePlane, double distanceToImagePlaneForConvertingXGalvoAngleToDrawingArea, double distanceToImagePlaneForConvertingYGalvoAngleToDrawingArea, bool useRayToPlaneIntersectionForConvertingGalvosAnglesToDrawingArea)
         {
             DrawingAreaToGalvoAngles(x, y, distanceBetweenMirrors, distanceToImagePlane, out double galvoXAngle, out double galvoYAngle);
@@ -827,15 +838,6 @@ namespace LaserProjectorBridge
         public static double ComputeFieldOfView(double focalLengthInPixels, double imageSizeInPixels)
         {
             return Math.Atan(imageSizeInPixels / (focalLengthInPixels * 2.0)) * 2.0;
-        }
-
-        public static void ComputeScalingFactorsFromImagePlaneToDrawingArea(double focalLengthInPixelsX, double imageSizeInPixelsX, double focalLengthInPixelsY, double imageSizeInPixelsY, double distanceBetweenMirrors, double distanceToImagePlane, out double xScale, out double yScale)
-        {
-            double fovX = ComputeFieldOfView(focalLengthInPixelsX, imageSizeInPixelsX);
-            double fovY = ComputeFieldOfView(focalLengthInPixelsY, imageSizeInPixelsY);
-            GalvoAnglesToDrawingArea(fovX / 2.0, fovY / 2.0, distanceBetweenMirrors, distanceToImagePlane, out double x, out double y);
-            xScale = imageSizeInPixelsX / x;
-            yScale = imageSizeInPixelsY / y;
         }
 
         public static double ChangeFromDrawingAreaOriginToPrincipalPointOrigin(double drawingAreaValue, double imageSize, double principalPoint)
