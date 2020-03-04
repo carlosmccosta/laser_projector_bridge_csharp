@@ -260,8 +260,8 @@ namespace LaserProjectorBridge
              * - JMLASER_ERROR_DEVICE_NOT_FOUND
              *   A device with the device name was not found.
              */
-            [DllImport(JMLaserDll, CallingConvention=CallingConvention.StdCall, CharSet = CharSet.Ansi)]
-            public static extern int jmLaserGetFriendlyName(String device_name, StringBuilder device_friendly_name, uint length);
+            [DllImport(JMLaserDll, CallingConvention=CallingConvention.StdCall)]
+            public static extern int jmLaserGetFriendlyName(String device_name, byte[] device_friendly_name, uint length);
 
 
 

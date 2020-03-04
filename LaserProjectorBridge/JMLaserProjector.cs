@@ -166,12 +166,21 @@ namespace LaserProjectorBridge
         {
             if (projectorName.Length == 0) { return ""; }
             if (jmLaserBridgeEnumerateDevices() <= 0) { return ""; }
-            int deviceFriendlyNameLength = NativeMethods.JMLaser.jmLaserGetFriendlyNameLength(projectorName);
+            int deviceFriendlyNameLength = NativeMethods.JMLaser.jmLaserGetFriendlyNameLength(projectorName) * 2;
             if (deviceFriendlyNameLength > 0)
             {
-                StringBuilder deviceFriendlyName = new StringBuilder(deviceFriendlyNameLength);
-                if (NativeMethods.JMLaser.jmLaserGetFriendlyName(projectorName, deviceFriendlyName, (uint) deviceFriendlyNameLength) == 0) {
-                    return deviceFriendlyName.ToString();
+                byte[] deviceFriendlyName = new byte[deviceFriendlyNameLength];
+                if (NativeMethods.JMLaser.jmLaserGetFriendlyName(projectorName, deviceFriendlyName, (uint)deviceFriendlyNameLength) == 0)
+                {
+                    StringBuilder deviceFriendlyNameBuilder = new StringBuilder();
+                    for (int i = 0; i < deviceFriendlyNameLength; ++i)
+                    {
+                        if (deviceFriendlyName[i] != '\0')
+                        {
+                            deviceFriendlyNameBuilder.Append((char)deviceFriendlyName[i]);
+                        }
+                    }
+                    return deviceFriendlyNameBuilder.ToString();
                 }
             }
             return "";
